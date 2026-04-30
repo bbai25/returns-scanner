@@ -30,7 +30,7 @@ button{background:#000;color:white;border:0;border-radius:10px}
 <button id="scanBtn">Start Camera Scan</button>
 
 <div id="reader"></div>
-<div id="status" class="status">Page loaded. Ready.</div>
+<div id="status" class="status">Ready.</div>
 </div>
 
 <div class="card">
@@ -48,7 +48,7 @@ button{background:#000;color:white;border:0;border-radius:10px}
 </select>
 
 <label>Notes</label>
-<textarea id="notes" placeholder="Add notes if needed"></textarea>
+<textarea id="notes"></textarea>
 
 <label>Photo Proof</label>
 <input id="photo" type="file" accept="image/*" capture="environment">
@@ -66,20 +66,15 @@ function show(msg){
   statusBox.innerText = msg;
 }
 
-window.onerror = function(message, source, lineno, colno, error){
-  show("JavaScript error:\n" + message + "\nLine: " + lineno);
-};
-
 document.getElementById("scanBtn").addEventListener("click", async function(){
-  show("Button clicked. Checking scanner library...");
 
   if (typeof Html5Qrcode === "undefined") {
-    show("ERROR: Scanner library did not load.");
+    show("Scanner failed to load");
     return;
   }
 
   try {
-    show("Opening camera. Allow camera permission.");
+    show("Opening camera...");
 
     scanner = new Html5Qrcode("reader");
 
@@ -94,7 +89,7 @@ document.getElementById("scanBtn").addEventListener("click", async function(){
     );
 
   } catch(err) {
-    show("Camera error:\n" + err);
+    show("Camera error: " + err);
   }
 });
 
@@ -121,17 +116,17 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
   };
 
   if (!data.driver || !data.tba || !data.reason) {
-    show("Missing info. Driver name, TBA, and reason are required.");
+    show("Missing required fields");
     return;
   }
 
   if (!photoFile) {
-    show("Photo is required.");
+    show("Photo required");
     return;
   }
 
   try {
-    show("Saving return and uploading photo...");
+    show("Uploading...");
 
     await fetch(WEB_APP_URL, {
       method: "POST",
@@ -139,7 +134,7 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
       body: JSON.stringify(data)
     });
 
-    show("Saved to Google Sheet with photo.");
+    show("Saved to Google Sheet");
 
     document.getElementById("tbaCode").value = "";
     document.getElementById("reason").value = "";
@@ -147,7 +142,7 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
     document.getElementById("photo").value = "";
 
   } catch (err) {
-    show("Error sending data:\n" + err);
+    show("Error: " + err);
   }
 });
 </script>
