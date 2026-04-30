@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SYMX Return Package Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background: #f4f6f8;
+      color: #111;
+    }
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 18px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 18px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+    }
+    .subtitle {
+      color: #555;
+      font-size: 14px;
+      margin-bottom: 14px;
+    }
+    label {
+      font-weight: 700;
+      display: block;
+      margin: 14px 0 6px;
+    }
+    input, select, textarea, button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    button {
+      border: none;
+      background: #111827;
+      color: #fff;
+      font-weight: 700;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #374151;
+    }
+    button.danger {
+      background: #991b1b;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    #reader {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 10px;
+      background: #eef2ff;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    .success {
+      background: #dcfce7;
+    }
+    .error {
+      background: #fee2e2;
+    }
+    .small {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Return Package Scanner</h1>
+      <div class="subtitle">Scan the package barcode/TBA, select the reason, upload photo proof, then submit.</div>
+
+      <label for="driverName">Driver Name</label>
+      <input id="driverName" placeholder="Example: John Smith" />
+
+      <label for="tbaCode">Scanned TBA / Barcode</label>
+      <input id="tbaCode" placeholder="Scan or type TBA" />
+
+      <button id="startScanBtn" type="button">Start Camera Scan</button>
+      <button id="stopScanBtn" class="danger" type="button" style="display:none;">Stop Scanner</button>
+      <div id="reader" style="display:none;"></div>
+      <div id="scanStatus" class="status">Scanner not started.</div>
+    </div>
+
+    <div class="card">
+      <label for="returnReason">Return Reason</label>
+      <select id="returnReason">
+        <option value="">Select reason</option>
+        <option>Business Closed</option>
+        <option>Customer Unavailable</option>
+        <option>Access Problem / Gate Code</option>
+        <option>Unable to Locate Address</option>
+        <option>Damaged Package</option>
+        <option>Package Not on Route</option>
+        <option>Station Issue</option>
+        <option>Other</option>
+      </select>
+
+      <label for="notes">Notes</label>
+      <textarea id="notes" placeholder="Add details if needed"></textarea>
+
+      <label for="photo">Photo Proof</label>
+      <input id="photo" type="file" accept="image/*" capture="environment" />
+      <p class="small">Photo should show the package label/TBA when possible.</p>
+
+      <button id="submitBtn" type="button">Submit Return</button>
+      <div id="submitStatus" class="status">Ready.</div>
+    </div>
+  </div>
+
+  <script>
+    // Replace this later with your Google Apps Script Web App URL.
+    // Temporary Google Sheets backend.
+    // Replace this with your deployed Google Apps Script Web App URL.
+    const WEB_APP_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+    let html5QrCode;
+    let scanning = false;
+
+    const startScanBtn = document.getElementById("startScanBtn");
+    const stopScanBtn = document.getElementById("stopScanBtn");
+    const reader = document.getElementById("reader");
+    const scanStatus = document.getElementById("scanStatus");
+    const submitStatus = document.getElementById("submitStatus");
+
+    function setStatus(element, message, type = "") {
+      element.className = "status" + (type ? " " + type : "");
+      element.textContent = message;
+    }
+
+    async function startScanner() {
+      try {
+        reader.style.display = "block";
+        startScanBtn.style.display = "none";
+        stopScanBtn.style.display = "block";
+        setStatus(scanStatus, "Starting camera...");
+
+        html5QrCode = new Html5Qrcode("reader");
+        scanning = true;
+
+        await html5QrCode.start(
+          { facingMode: "environment" },
+          {
+            fps: 10,
+            qrbox: { width: 260, height: 160 },
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.QR_CODE,
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.CODE_39,
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.UPC_A
+            ]
+          },
+          async (decodedText) => {
+            document.getElementById("tbaCode").value = decodedText;
+            setStatus(scanStatus, "Scanned: " + decodedText, "success");
+            await stopScanner();
+          },
+          () => {}
+        );
+      } catch (error) {
+        console.error(error);
+        setStatus(scanStatus, "Camera failed. Make sure the page is HTTPS and camera permission is allowed.", "error");
+        reader.style.display = "none";
+        startScanBtn.style.display = "block";
+        stopScanBtn.style.display = "none";
+      }
+    }
+
+    async function stopScanner() {
+      if (html5QrCode && scanning) {
+        try {
+          await html5QrCode.stop();
+          await html5QrCode.clear();
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+      scanning = false;
+      reader.style.display = "none";
+      startScanBtn.style.display = "block";
+      stopScanBtn.style.display = "none";
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function submitReturn() {
+      const driverName = document.getElementById("driverName").value.trim();
+      const tbaCode = document.getElementById("tbaCode").value.trim();
+      const returnReason = document.getElementById("returnReason").value;
+      const notes = document.getElementById("notes").value.trim();
+      const photoFile = document.getElementById("photo").files[0];
+
+      if (!driverName || !tbaCode || !returnReason) {
+        setStatus(submitStatus, "Driver name, scanned TBA/barcode, and return reason are required.", "error");
+        return;
+      }
+
+      if (WEB_APP_URL.includes("PASTE_YOUR")) {
+        const preview = {
+          timestamp: new Date().toISOString(),
+          driverName,
+          tbaCode,
+          returnReason,
+          notes,
+          photoAttached: !!photoFile,
+          photoName: photoFile ? photoFile.name : ""
+        };
+
+        setStatus(submitStatus, "Test mode: add your Google Apps Script Web App URL to save into Google Sheets.", "error");
+        alert("Test Submission Preview:
+
+" + JSON.stringify(preview, null, 2));
+        return;
+      }
+
+      document.getElementById("submitBtn").disabled = true;
+      setStatus(submitStatus, "Submitting...");
+
+      let photoBase64 = "";
+      let photoName = "";
+
+      if (photoFile) {
+        photoBase64 = await fileToBase64(photoFile);
+        photoName = photoFile.name;
+      }
+
+      const payload = {
+        timestamp: new Date().toISOString(),
+        driverName,
+        tbaCode,
+        returnReason,
+        notes,
+        photoName,
+        photoBase64,
+        userAgent: navigator.userAgent
+      };
+
+      try {
+        await fetch(WEB_APP_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+
+        setStatus(submitStatus, "Submitted to database. You may scan the next return package.", "success");
+        document.getElementById("tbaCode").value = "";
+        document.getElementById("returnReason").value = "";
+        document.getElementById("notes").value = "";
+        document.getElementById("photo").value = "";
+      } catch (error) {
+        console.error(error);
+        setStatus(submitStatus, "Submission failed. Check connection or backend URL.", "error");
+      } finally {
+        document.getElementById("submitBtn").disabled = false;
+      }
+    }
+
+    startScanBtn.addEventListener("click", startScanner);
+    stopScanBtn.addEventListener("click", stopScanner);
+    document.getElementById("submitBtn").addEventListener("click", submitReturn);
+  </script>
+</body>
+</html>
