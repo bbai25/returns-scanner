@@ -3,9 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Return Package Scanner</title>
-
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
 <style>
 body{font-family:Arial;padding:15px;background:#f4f4f4}
 .card{background:white;padding:15px;border-radius:12px;margin-bottom:15px}
@@ -15,12 +13,10 @@ button{background:#000;color:white;border:0;border-radius:10px}
 .status{background:#eef;padding:10px;border-radius:8px;white-space:pre-wrap}
 </style>
 </head>
-
 <body>
 
 <div class="card">
 <h2>Return Package Scanner</h2>
-
 <label>Driver Name</label>
 <input id="driverName" placeholder="Enter driver name">
 
@@ -28,7 +24,6 @@ button{background:#000;color:white;border:0;border-radius:10px}
 <input id="tbaCode" placeholder="Scan or type TBA">
 
 <button id="scanBtn">Start Camera Scan</button>
-
 <div id="reader"></div>
 <div id="status" class="status">Ready.</div>
 </div>
@@ -62,22 +57,12 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQo
 const statusBox = document.getElementById("status");
 let scanner;
 
-function show(msg){
-  statusBox.innerText = msg;
-}
+function show(msg){ statusBox.innerText = msg; }
 
 document.getElementById("scanBtn").addEventListener("click", async function(){
-
-  if (typeof Html5Qrcode === "undefined") {
-    show("Scanner failed to load");
-    return;
-  }
-
   try {
     show("Opening camera...");
-
     scanner = new Html5Qrcode("reader");
-
     await scanner.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
@@ -87,36 +72,56 @@ document.getElementById("scanBtn").addEventListener("click", async function(){
         scanner.stop();
       }
     );
-
   } catch(err) {
     show("Camera error: " + err);
   }
 });
 
-function fileToBase64(file) {
+function compressImage(file) {
   return new Promise((resolve, reject) => {
+    const img = new Image();
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+
+    reader.onload = e => {
+      img.src = e.target.result;
+    };
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxWidth = 900;
+      const scale = Math.min(1, maxWidth / img.width);
+
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const compressedBase64 = canvas.toDataURL("image/jpeg", 0.55);
+      resolve(compressedBase64);
+    };
+
     reader.onerror = reject;
+    img.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
 
 document.getElementById("submitBtn").addEventListener("click", async function(){
-
   const photoFile = document.getElementById("photo").files[0];
 
-  const data = {
-    driver: document.getElementById("driverName").value.trim(),
-    tba: document.getElementById("tbaCode").value.trim(),
-    reason: document.getElementById("reason").value,
-    notes: document.getElementById("notes").value.trim(),
-    photoName: photoFile ? photoFile.name : "",
-    photoBase64: photoFile ? await fileToBase64(photoFile) : ""
-  };
+  if (!document.getElementById("driverName").value.trim()) {
+    show("Driver name required");
+    return;
+  }
 
-  if (!data.driver || !data.tba || !data.reason) {
-    show("Missing required fields");
+  if (!document.getElementById("tbaCode").value.trim()) {
+    show("TBA required");
+    return;
+  }
+
+  if (!document.getElementById("reason").value) {
+    show("Return reason required");
     return;
   }
 
@@ -126,7 +131,20 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
   }
 
   try {
-    show("Uploading...");
+    show("Compressing photo...");
+
+    const compressedPhoto = await compressImage(photoFile);
+
+    const data = {
+      driver: document.getElementById("driverName").value.trim(),
+      tba: document.getElementById("tbaCode").value.trim(),
+      reason: document.getElementById("reason").value,
+      notes: document.getElementById("notes").value.trim(),
+      photoName: "return_photo.jpg",
+      photoBase64: compressedPhoto
+    };
+
+    show("Uploading to Google Sheet...");
 
     await fetch(WEB_APP_URL, {
       method: "POST",
@@ -134,15 +152,15 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
       body: JSON.stringify(data)
     });
 
-    show("Saved to Google Sheet");
+    show("Saved to Google Sheet with photo.");
 
     document.getElementById("tbaCode").value = "";
     document.getElementById("reason").value = "";
     document.getElementById("notes").value = "";
     document.getElementById("photo").value = "";
 
-  } catch (err) {
-    show("Error: " + err);
+  } catch(err) {
+    show("Error sending data: " + err);
   }
 });
 </script>
