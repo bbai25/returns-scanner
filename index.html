@@ -2,8 +2,10 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Return Scanner Test</title>
+<title>Return Package Scanner</title>
+
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 <style>
 body{font-family:Arial;padding:15px;background:#f4f4f4}
 .card{background:white;padding:15px;border-radius:12px;margin-bottom:15px}
@@ -13,16 +15,17 @@ button{background:#000;color:white;border:0;border-radius:10px}
 .status{background:#eef;padding:10px;border-radius:8px;white-space:pre-wrap}
 </style>
 </head>
+
 <body>
 
 <div class="card">
 <h2>Return Package Scanner</h2>
 
 <label>Driver Name</label>
-<input id="driverName">
+<input id="driverName" placeholder="Enter driver name">
 
 <label>Scanned TBA / Barcode</label>
-<input id="tbaCode">
+<input id="tbaCode" placeholder="Scan or type TBA">
 
 <button id="scanBtn">Start Camera Scan</button>
 
@@ -37,20 +40,22 @@ button{background:#000;color:white;border:0;border-radius:10px}
 <option>Business Closed</option>
 <option>Customer Unavailable</option>
 <option>Access Problem</option>
+<option>Unable to Locate Address</option>
 <option>Damaged Package</option>
+<option>Package Not on Route</option>
+<option>Station Issue</option>
 <option>Other</option>
 </select>
 
 <label>Notes</label>
-<textarea id="notes"></textarea>
+<textarea id="notes" placeholder="Add notes if needed"></textarea>
 
-<label>Photo</label>
-<input type="file" accept="image/*" capture="environment">
-
-<button id="submitBtn">Submit Test</button>
+<button id="submitBtn">Submit Return</button>
 </div>
 
 <script>
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec";
+
 const statusBox = document.getElementById("status");
 let scanner;
 
@@ -66,7 +71,7 @@ document.getElementById("scanBtn").addEventListener("click", async function(){
   show("Button clicked. Checking scanner library...");
 
   if (typeof Html5Qrcode === "undefined") {
-    show("ERROR: Scanner library did not load. Check internet connection or GitHub page.");
+    show("ERROR: Scanner library did not load.");
     return;
   }
 
@@ -90,15 +95,38 @@ document.getElementById("scanBtn").addEventListener("click", async function(){
   }
 });
 
-document.getElementById("submitBtn").addEventListener("click", function(){
+document.getElementById("submitBtn").addEventListener("click", async function(){
+
   const data = {
-    driver: document.getElementById("driverName").value,
-    tba: document.getElementById("tbaCode").value,
+    driver: document.getElementById("driverName").value.trim(),
+    tba: document.getElementById("tbaCode").value.trim(),
     reason: document.getElementById("reason").value,
-    notes: document.getElementById("notes").value
+    notes: document.getElementById("notes").value.trim()
   };
 
-  alert(JSON.stringify(data, null, 2));
+  if (!data.driver || !data.tba || !data.reason) {
+    show("Missing info. Driver name, TBA, and reason are required.");
+    return;
+  }
+
+  try {
+    show("Saving to Google Sheet...");
+
+    await fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      body: JSON.stringify(data)
+    });
+
+    show("Saved to Google Sheet.");
+
+    document.getElementById("tbaCode").value = "";
+    document.getElementById("reason").value = "";
+    document.getElementById("notes").value = "";
+
+  } catch (err) {
+    show("Error sending data:\n" + err);
+  }
 });
 </script>
 
