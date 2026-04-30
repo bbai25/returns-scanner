@@ -146,6 +146,7 @@
 
     let html5QrCode;
     let scanning = false;
+    let scannerInstance = null;
 
     const startScanBtn = document.getElementById("startScanBtn");
     const stopScanBtn = document.getElementById("stopScanBtn");
@@ -158,39 +159,35 @@
       element.textContent = message;
     }
 
-    async function startScanner() {
+    function startScanner() {
       try {
         reader.style.display = "block";
         startScanBtn.style.display = "none";
         stopScanBtn.style.display = "block";
-        setStatus(scanStatus, "Starting camera...");
+        setStatus(scanStatus, "Opening camera scanner...");
 
-        html5QrCode = new Html5Qrcode("reader");
-        scanning = true;
-
-        await html5QrCode.start(
-          { facingMode: "environment" },
+        scannerInstance = new Html5QrcodeScanner(
+          "reader",
           {
             fps: 10,
-            qrbox: { width: 260, height: 160 },
-            formatsToSupport: [
-              Html5QrcodeSupportedFormats.QR_CODE,
-              Html5QrcodeSupportedFormats.CODE_128,
-              Html5QrcodeSupportedFormats.CODE_39,
-              Html5QrcodeSupportedFormats.EAN_13,
-              Html5QrcodeSupportedFormats.UPC_A
-            ]
+            qrbox: { width: 250, height: 150 },
+            rememberLastUsedCamera: true,
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
           },
-          async (decodedText) => {
+          false
+        );
+
+        scannerInstance.render(
+          (decodedText) => {
             document.getElementById("tbaCode").value = decodedText;
             setStatus(scanStatus, "Scanned: " + decodedText, "success");
-            await stopScanner();
+            stopScanner();
           },
           () => {}
         );
       } catch (error) {
         console.error(error);
-        setStatus(scanStatus, "Camera failed. Make sure the page is HTTPS and camera permission is allowed.", "error");
+        setStatus(scanStatus, "Scanner failed to open. Check camera permission and make sure this is the live HTTPS GitHub Pages link.", "error");
         reader.style.display = "none";
         startScanBtn.style.display = "block";
         stopScanBtn.style.display = "none";
@@ -198,18 +195,22 @@
     }
 
     async function stopScanner() {
-      if (html5QrCode && scanning) {
-        try {
-          await html5QrCode.stop();
-          await html5QrCode.clear();
-        } catch (error) {
-          console.warn(error);
+      try {
+        if (scannerInstance) {
+          await scannerInstance.clear();
+          scannerInstance = null;
         }
+      } catch (error) {
+        console.warn(error);
       }
+
       scanning = false;
       reader.style.display = "none";
       startScanBtn.style.display = "block";
       stopScanBtn.style.display = "none";
+      if (!document.getElementById("tbaCode").value) {
+        setStatus(scanStatus, "Scanner stopped.");
+      }
     }
 
     function fileToBase64(file) {
