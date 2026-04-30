@@ -50,6 +50,9 @@ button{background:#000;color:white;border:0;border-radius:10px}
 <label>Notes</label>
 <textarea id="notes" placeholder="Add notes if needed"></textarea>
 
+<label>Photo Proof</label>
+<input id="photo" type="file" accept="image/*" capture="environment">
+
 <button id="submitBtn">Submit Return</button>
 </div>
 
@@ -95,13 +98,26 @@ document.getElementById("scanBtn").addEventListener("click", async function(){
   }
 });
 
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 document.getElementById("submitBtn").addEventListener("click", async function(){
+
+  const photoFile = document.getElementById("photo").files[0];
 
   const data = {
     driver: document.getElementById("driverName").value.trim(),
     tba: document.getElementById("tbaCode").value.trim(),
     reason: document.getElementById("reason").value,
-    notes: document.getElementById("notes").value.trim()
+    notes: document.getElementById("notes").value.trim(),
+    photoName: photoFile ? photoFile.name : "",
+    photoBase64: photoFile ? await fileToBase64(photoFile) : ""
   };
 
   if (!data.driver || !data.tba || !data.reason) {
@@ -109,8 +125,13 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
     return;
   }
 
+  if (!photoFile) {
+    show("Photo is required.");
+    return;
+  }
+
   try {
-    show("Saving to Google Sheet...");
+    show("Saving return and uploading photo...");
 
     await fetch(WEB_APP_URL, {
       method: "POST",
@@ -118,11 +139,12 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
       body: JSON.stringify(data)
     });
 
-    show("Saved to Google Sheet.");
+    show("Saved to Google Sheet with photo.");
 
     document.getElementById("tbaCode").value = "";
     document.getElementById("reason").value = "";
     document.getElementById("notes").value = "";
+    document.getElementById("photo").value = "";
 
   } catch (err) {
     show("Error sending data:\n" + err);
