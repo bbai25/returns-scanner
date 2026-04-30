@@ -1,22 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Return Scanner</title>
-
+<title>Return Scanner Test</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
 <style>
-body { font-family: Arial; padding: 15px; background:#f4f4f4;}
-.card { background:white; padding:15px; border-radius:12px; margin-bottom:15px;}
-button { width:100%; padding:12px; font-size:16px; background:black; color:white; border:none; border-radius:10px;}
-input, select, textarea { width:100%; padding:10px; margin-top:5px; border-radius:8px; border:1px solid #ccc;}
-#reader { width:100%; margin-top:10px; }
-.status { margin-top:10px; padding:10px; background:#eee; border-radius:8px;}
+body{font-family:Arial;padding:15px;background:#f4f4f4}
+.card{background:white;padding:15px;border-radius:12px;margin-bottom:15px}
+input,select,textarea,button{width:100%;padding:12px;margin:8px 0;font-size:16px;box-sizing:border-box}
+button{background:#000;color:white;border:0;border-radius:10px}
+#reader{width:100%;margin-top:10px}
+.status{background:#eef;padding:10px;border-radius:8px;white-space:pre-wrap}
 </style>
 </head>
-
 <body>
 
 <div class="card">
@@ -28,15 +24,16 @@ input, select, textarea { width:100%; padding:10px; margin-top:5px; border-radiu
 <label>Scanned TBA / Barcode</label>
 <input id="tbaCode">
 
-<button onclick="startScanner()">Start Camera Scan</button>
+<button id="scanBtn">Start Camera Scan</button>
+
 <div id="reader"></div>
-<div id="status" class="status">Scanner not started</div>
+<div id="status" class="status">Page loaded. Ready.</div>
 </div>
 
 <div class="card">
 <label>Return Reason</label>
 <select id="reason">
-<option value="">Select</option>
+<option value="">Select Reason</option>
 <option>Business Closed</option>
 <option>Customer Unavailable</option>
 <option>Access Problem</option>
@@ -50,33 +47,50 @@ input, select, textarea { width:100%; padding:10px; margin-top:5px; border-radiu
 <label>Photo</label>
 <input type="file" accept="image/*" capture="environment">
 
-<button onclick="submitForm()">Submit</button>
+<button id="submitBtn">Submit Test</button>
 </div>
 
 <script>
+const statusBox = document.getElementById("status");
 let scanner;
 
-function startScanner() {
-  document.getElementById("status").innerText = "Opening camera...";
-  document.getElementById("reader").style.display = "block";
-
-  scanner = new Html5Qrcode("reader");
-
-  scanner.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    function(decodedText) {
-      document.getElementById("tbaCode").value = decodedText;
-      document.getElementById("status").innerText = "Scanned: " + decodedText;
-      scanner.stop();
-      document.getElementById("reader").style.display = "none";
-    }
-  ).catch(err => {
-    document.getElementById("status").innerText = "Camera error: " + err;
-  });
+function show(msg){
+  statusBox.innerText = msg;
 }
 
-function submitForm() {
+window.onerror = function(message, source, lineno, colno, error){
+  show("JavaScript error:\n" + message + "\nLine: " + lineno);
+};
+
+document.getElementById("scanBtn").addEventListener("click", async function(){
+  show("Button clicked. Checking scanner library...");
+
+  if (typeof Html5Qrcode === "undefined") {
+    show("ERROR: Scanner library did not load. Check internet connection or GitHub page.");
+    return;
+  }
+
+  try {
+    show("Opening camera. Allow camera permission.");
+
+    scanner = new Html5Qrcode("reader");
+
+    await scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      function(decodedText){
+        document.getElementById("tbaCode").value = decodedText;
+        show("Scanned: " + decodedText);
+        scanner.stop();
+      }
+    );
+
+  } catch(err) {
+    show("Camera error:\n" + err);
+  }
+});
+
+document.getElementById("submitBtn").addEventListener("click", function(){
   const data = {
     driver: document.getElementById("driverName").value,
     tba: document.getElementById("tbaCode").value,
@@ -84,8 +98,8 @@ function submitForm() {
     notes: document.getElementById("notes").value
   };
 
-  alert("Test Submit:\n\n" + JSON.stringify(data, null, 2));
-}
+  alert(JSON.stringify(data, null, 2));
+});
 </script>
 
 </body>
