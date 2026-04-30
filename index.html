@@ -17,11 +17,12 @@ button{background:#000;color:white;border:0;border-radius:10px}
 
 <div class="card">
 <h2>Return Package Scanner</h2>
+
 <label>Driver Name</label>
-<input id="driverName" placeholder="Enter driver name">
+<input id="driverName">
 
 <label>Scanned TBA / Barcode</label>
-<input id="tbaCode" placeholder="Scan or type TBA">
+<input id="tbaCode">
 
 <button id="scanBtn">Start Camera Scan</button>
 <div id="reader"></div>
@@ -51,9 +52,13 @@ button{background:#000;color:white;border:0;border-radius:10px}
 <button id="submitBtn">Submit Return</button>
 </div>
 
-<script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec";
+<iframe name="hiddenFrame" style="display:none;"></iframe>
 
+<form id="hiddenForm" method="POST" target="hiddenFrame" action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec" style="display:none;">
+  <textarea name="payload" id="payload"></textarea>
+</form>
+
+<script>
 const statusBox = document.getElementById("status");
 let scanner;
 
@@ -63,6 +68,7 @@ document.getElementById("scanBtn").addEventListener("click", async function(){
   try {
     show("Opening camera...");
     scanner = new Html5Qrcode("reader");
+
     await scanner.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
@@ -82,13 +88,11 @@ function compressImage(file) {
     const img = new Image();
     const reader = new FileReader();
 
-    reader.onload = e => {
-      img.src = e.target.result;
-    };
+    reader.onload = e => img.src = e.target.result;
 
     img.onload = () => {
       const canvas = document.createElement("canvas");
-      const maxWidth = 900;
+      const maxWidth = 600;
       const scale = Math.min(1, maxWidth / img.width);
 
       canvas.width = img.width * scale;
@@ -97,8 +101,7 @@ function compressImage(file) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      const compressedBase64 = canvas.toDataURL("image/jpeg", 0.55);
-      resolve(compressedBase64);
+      resolve(canvas.toDataURL("image/jpeg", 0.35));
     };
 
     reader.onerror = reject;
@@ -110,57 +113,49 @@ function compressImage(file) {
 document.getElementById("submitBtn").addEventListener("click", async function(){
   const photoFile = document.getElementById("photo").files[0];
 
-  if (!document.getElementById("driverName").value.trim()) {
-    show("Driver name required");
-    return;
-  }
+  const driver = document.getElementById("driverName").value.trim();
+  const tba = document.getElementById("tbaCode").value.trim();
+  const reason = document.getElementById("reason").value;
+  const notes = document.getElementById("notes").value.trim();
 
-  if (!document.getElementById("tbaCode").value.trim()) {
-    show("TBA required");
-    return;
-  }
-
-  if (!document.getElementById("reason").value) {
-    show("Return reason required");
+  if (!driver || !tba || !reason) {
+    show("Driver, TBA, and reason are required.");
     return;
   }
 
   if (!photoFile) {
-    show("Photo required");
+    show("Photo required.");
     return;
   }
 
   try {
     show("Compressing photo...");
-
-    const compressedPhoto = await compressImage(photoFile);
+    const photoBase64 = await compressImage(photoFile);
 
     const data = {
-      driver: document.getElementById("driverName").value.trim(),
-      tba: document.getElementById("tbaCode").value.trim(),
-      reason: document.getElementById("reason").value,
-      notes: document.getElementById("notes").value.trim(),
-      photoName: "return_photo.jpg",
-      photoBase64: compressedPhoto
+      driver,
+      tba,
+      reason,
+      notes,
+      photoName: tba + "_return_photo.jpg",
+      photoBase64
     };
 
-    show("Uploading to Google Sheet...");
+    document.getElementById("payload").value = JSON.stringify(data);
 
-    await fetch(WEB_APP_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: JSON.stringify(data)
-    });
+    show("Submitting to Google Sheet...");
+    document.getElementById("hiddenForm").submit();
 
-    show("Saved to Google Sheet with photo.");
-
-    document.getElementById("tbaCode").value = "";
-    document.getElementById("reason").value = "";
-    document.getElementById("notes").value = "";
-    document.getElementById("photo").value = "";
+    setTimeout(() => {
+      show("Submitted. Check Google Sheet for photo link.");
+      document.getElementById("tbaCode").value = "";
+      document.getElementById("reason").value = "";
+      document.getElementById("notes").value = "";
+      document.getElementById("photo").value = "";
+    }, 2500);
 
   } catch(err) {
-    show("Error sending data: " + err);
+    show("Error: " + err);
   }
 });
 </script>
