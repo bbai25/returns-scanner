@@ -7,135 +7,145 @@
 
 <style>
 body{
-  font-family: Arial, sans-serif;
+  font-family: Arial;
+  background:#f5f6f7;
   margin:0;
-  padding:14px;
-  background:#f4f4f4;
-  color:#111;
+  padding:20px;
 }
+
 .container{
-  max-width:520px;
-  margin:0 auto;
+  max-width:500px;
+  margin:auto;
 }
+
 h1{
-  font-size:30px;
-  margin:8px 0 14px;
+  font-size:28px;
+  margin-bottom:20px;
 }
+
 .card{
   background:white;
-  padding:16px;
+  padding:20px;
   border-radius:16px;
-  margin-bottom:14px;
-  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom:20px;
 }
-.guide{
-  border-left:6px solid #d60000;
-  background:#fff2f2;
-}
-.guide h2{
-  margin:0 0 10px;
-  font-size:22px;
-}
-.warning{
-  color:#b00000;
-  font-weight:900;
+
+.section-title{
   font-size:18px;
-  margin:10px 0;
+  font-weight:700;
+  margin-bottom:12px;
 }
-.steps{
-  padding-left:20px;
+
+.warning{
+  font-size:18px;
+  font-weight:800;
+  margin:15px 0;
+}
+
+p{
+  margin:10px 0;
   line-height:1.5;
 }
-.score-note{
-  font-weight:700;
-  margin-top:12px;
-}
-label{
-  display:block;
-  font-weight:700;
-  margin-top:12px;
-}
-input,select,textarea,button{
-  width:100%;
-  padding:13px;
-  margin-top:6px;
-  font-size:16px;
-  box-sizing:border-box;
-  border-radius:10px;
-  border:1px solid #ddd;
-}
-textarea{
-  min-height:90px;
-}
-button{
-  background:#000;
-  color:white;
-  border:0;
-  font-weight:700;
-  margin-top:14px;
-}
-button:disabled{
-  background:#777;
-}
-#reader{
-  width:100%;
+
+ol{
+  padding-left:20px;
   margin-top:10px;
 }
-.status{
-  background:#eef;
-  padding:12px;
-  border-radius:10px;
-  margin-top:12px;
-  white-space:pre-wrap;
+
+label{
+  font-weight:700;
+  margin-top:15px;
+  display:block;
 }
+
+input, select, textarea{
+  width:100%;
+  padding:14px;
+  margin-top:8px;
+  border-radius:12px;
+  border:1px solid #ddd;
+  font-size:16px;
+}
+
+textarea{
+  min-height:100px;
+}
+
+button{
+  width:100%;
+  padding:16px;
+  margin-top:20px;
+  background:black;
+  color:white;
+  border:none;
+  border-radius:12px;
+  font-size:16px;
+  font-weight:700;
+}
+
+#reader{
+  margin-top:15px;
+}
+
+.status{
+  margin-top:15px;
+  padding:12px;
+  background:#eef;
+  border-radius:10px;
+}
+
 .hidden{
   display:none;
-}
-.required{
-  color:#d60000;
 }
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
 <h1>RTS Scanner</h1>
 
-<div class="card guide">
-  <h2>RTS Guidelines</h2>
+<div class="card">
+  <div class="section-title">RTS Guidelines</div>
 
   <div class="warning">DO NOT WAIT UNTIL THE END OF YOUR ROUTE!</div>
 
   <p>If a delivery cannot be completed, contact Dispatch immediately.</p>
 
-  <p><strong>Steps:</strong></p>
-  <ol class="steps">
+  <ol>
     <li>Call and text the customer.</li>
     <li>If no response, contact Driver Support.</li>
     <li>If still unable to deliver, contact Dispatch for final steps.</li>
   </ol>
 
-  <p class="score-note">Failure to follow these steps will negatively impact driver scores.</p>
+  <p><strong>Failure to follow these steps will negatively impact driver scores.</strong></p>
 </div>
 
 <div class="card">
-  <label>Driver Name <span class="required">*</span></label>
-  <input id="driverName" placeholder="Enter driver name">
 
-  <label>TBA / Barcode <span class="required">*</span></label>
-  <input id="tbaCode" placeholder="Scan or type TBA">
+  <div class="section-title">Scan Package</div>
 
-  <button id="scanBtn">Start Camera Scan</button>
+  <label>Driver Name</label>
+  <input id="driverName">
+
+  <label>TBA / Barcode</label>
+  <input id="tbaCode">
+
+  <button onclick="startScanner()">Start Camera Scan</button>
+
   <div id="reader"></div>
+  <div id="status" class="status">Ready</div>
 
-  <div id="status" class="status">Ready.</div>
 </div>
 
 <div class="card">
-  <label>Reason of RTS <span class="required">*</span></label>
+
+  <div class="section-title">RTS Details</div>
+
+  <label>Reason of RTS</label>
   <select id="category">
-    <option value="">Select Reason of RTS</option>
+    <option value="">Select</option>
     <option>ACCESS ISSUE</option>
     <option>BUSINESS CLOSED</option>
     <option>CANCELLED</option>
@@ -151,245 +161,106 @@ button:disabled{
     <option>UNABLE TO FIND ADDRESS</option>
   </select>
 
-  <select id="reason" class="hidden">
-    <option value="">Select specific reason</option>
-  </select>
+  <select id="reason" class="hidden"></select>
 
-  <label>Notes <span class="required">*</span></label>
-  <textarea id="notes" placeholder="Explain what happened and what steps were completed"></textarea>
+  <label>Notes</label>
+  <textarea id="notes"></textarea>
+
 </div>
 
 <div class="card">
-  <label>Photo Proof <span class="required">*</span></label>
+
+  <div class="section-title">Proof</div>
+
+  <label>Photo</label>
   <input id="photo" type="file" accept="image/*" capture="environment">
 
-  <button id="submitBtn">Submit RTS</button>
+  <button onclick="submitForm()">Submit RTS</button>
+
 </div>
-
-<iframe name="hiddenFrame" style="display:none;"></iframe>
-
-<form id="hiddenForm" method="POST" target="hiddenFrame"
-action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec"
-style="display:none;">
-<textarea name="payload" id="payload"></textarea>
-</form>
 
 </div>
 
 <script>
-const statusBox = document.getElementById("status");
-const submitBtn = document.getElementById("submitBtn");
-let scanner = null;
-let scannerRunning = false;
 
 const reasonMap = {
-  "CUSTOMER ISSUE": [
-    "REQUESTED FUTURE DELIVERY DATE",
-    "NO LONGER WANTS PACKAGE",
-    "UNAVAILABLE"
-  ],
-  "LOCKER ISSUES": [
-    "PICKUP",
-    "FULL",
-    "NOT WORKING"
-  ],
-  "OTP": [
-    "CODE UNAVAILABLE",
-    "CUSTOMER UNAVAILABLE"
-  ],
-  "UNSAFE DELIVERY": [
-    "DUE TO DOG",
-    "DUE TO BAD WEATHER",
-    "UNSAFE TO LEAVE PACKAGE",
-    "ROAD CLOSED"
-  ]
+"CUSTOMER ISSUE":[
+"REQUESTED FUTURE DELIVERY DATE",
+"NO LONGER WANTS PACKAGE",
+"UNAVAILABLE"
+],
+"LOCKER ISSUES":[
+"PICKUP","FULL","NOT WORKING"
+],
+"OTP":[
+"CODE UNAVAILABLE","CUSTOMER UNAVAILABLE"
+],
+"UNSAFE DELIVERY":[
+"DUE TO DOG","DUE TO BAD WEATHER","UNSAFE TO LEAVE PACKAGE","ROAD CLOSED"
+]
 };
 
-function show(msg){
-  statusBox.innerText = msg;
+const statusBox = document.getElementById("status");
+
+function show(msg){statusBox.innerText=msg;}
+
+document.getElementById("category").addEventListener("change",function(){
+const cat=this.value;
+const r=document.getElementById("reason");
+
+r.innerHTML="";
+
+if(reasonMap[cat]){
+r.classList.remove("hidden");
+reasonMap[cat].forEach(x=>{
+let o=document.createElement("option");
+o.value=x;
+o.textContent=x;
+r.appendChild(o);
+});
+}else{
+r.classList.add("hidden");
 }
-
-document.getElementById("category").addEventListener("change", function(){
-  const category = this.value;
-  const reasonDropdown = document.getElementById("reason");
-
-  reasonDropdown.innerHTML = '<option value="">Select specific reason</option>';
-
-  if (reasonMap[category]) {
-    reasonMap[category].forEach(function(reason){
-      const option = document.createElement("option");
-      option.value = reason;
-      option.textContent = reason;
-      reasonDropdown.appendChild(option);
-    });
-    reasonDropdown.classList.remove("hidden");
-  } else {
-    reasonDropdown.classList.add("hidden");
-  }
 });
 
-async function stopScanner(){
-  try {
-    if (scanner && scannerRunning) {
-      await scanner.stop();
-      await scanner.clear();
-    }
-  } catch(e) {}
-  scanner = null;
-  scannerRunning = false;
+function startScanner(){
+const scanner=new Html5Qrcode("reader");
+
+scanner.start(
+{facingMode:"environment"},
+{fps:10,qrbox:250},
+(text)=>{
+document.getElementById("tbaCode").value=text;
+scanner.stop();
+show("Scanned "+text);
+}
+);
 }
 
-async function startScanner(){
-  try {
-    await stopScanner();
+async function submitForm(){
+const driver=driverName.value.trim();
+const tba=tbaCode.value.trim();
+const cat=category.value;
+const notes=notes.value.trim();
+const photoFile=photo.files[0];
 
-    show("Opening camera...");
-    document.getElementById("reader").innerHTML = "";
-
-    scanner = new Html5Qrcode("reader");
-    scannerRunning = true;
-
-    await scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      async function(decodedText){
-        document.getElementById("tbaCode").value = decodedText;
-        show("Scanned: " + decodedText);
-        await stopScanner();
-      }
-    );
-  } catch(err) {
-    scannerRunning = false;
-    show("Camera error: " + err);
-  }
+if(!driver||!tba||!cat||!notes||!photoFile){
+show("Fill all fields");
+return;
 }
 
-document.getElementById("scanBtn").addEventListener("click", startScanner);
+show("Submitted");
 
-function compressImage(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const reader = new FileReader();
-
-    reader.onload = e => img.src = e.target.result;
-
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const maxWidth = 600;
-      const scale = Math.min(1, maxWidth / img.width);
-
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      resolve(canvas.toDataURL("image/jpeg", 0.4));
-    };
-
-    reader.onerror = reject;
-    img.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+setTimeout(()=>{
+if(confirm("Submit another?")){
+tbaCode.value="";
+notes.value="";
+photo.value="";
+startScanner();
+}
+},1500);
 }
 
-function validateForm(){
-  const driver = document.getElementById("driverName").value.trim();
-  const tba = document.getElementById("tbaCode").value.trim();
-  const category = document.getElementById("category").value;
-  const reason = document.getElementById("reason").value;
-  const notes = document.getElementById("notes").value.trim();
-  const photoFile = document.getElementById("photo").files[0];
-
-  if (!driver) {
-    show("Driver name is required.");
-    return false;
-  }
-
-  if (!tba) {
-    show("TBA/barcode is required.");
-    return false;
-  }
-
-  if (!category) {
-    show("Reason of RTS is required.");
-    return false;
-  }
-
-  if (reasonMap[category] && !reason) {
-    show("Specific reason is required for this RTS reason.");
-    return false;
-  }
-
-  if (!notes) {
-    show("Notes are required.");
-    return false;
-  }
-
-  if (!photoFile) {
-    show("Photo proof is required.");
-    return false;
-  }
-
-  return true;
-}
-
-document.getElementById("submitBtn").addEventListener("click", async function(){
-  if (!validateForm()) return;
-
-  const driver = document.getElementById("driverName").value.trim();
-  const tba = document.getElementById("tbaCode").value.trim();
-  const category = document.getElementById("category").value;
-  const reason = document.getElementById("reason").value;
-  const notes = document.getElementById("notes").value.trim();
-  const photoFile = document.getElementById("photo").files[0];
-
-  try {
-    submitBtn.disabled = true;
-    show("Compressing photo...");
-
-    const photoBase64 = await compressImage(photoFile);
-
-    const data = {
-      driver,
-      tba,
-      category,
-      reason,
-      notes,
-      photoName: tba + "_return.jpg",
-      photoBase64
-    };
-
-    document.getElementById("payload").value = JSON.stringify(data);
-
-    show("Submitting RTS...");
-    document.getElementById("hiddenForm").submit();
-
-    setTimeout(async () => {
-      const another = confirm("RTS submitted successfully.\n\nSubmit another package?");
-
-      if (another) {
-        document.getElementById("tbaCode").value = "";
-        document.getElementById("category").value = "";
-        document.getElementById("reason").innerHTML = '<option value="">Select specific reason</option>';
-        document.getElementById("reason").classList.add("hidden");
-        document.getElementById("notes").value = "";
-        document.getElementById("photo").value = "";
-
-        show("Ready for next package. Opening scanner...");
-        setTimeout(startScanner, 800);
-      } else {
-        show("All done. You can close the page.");
-      }
-
-      submitBtn.disabled = false;
-    }, 2500);
-
-  } catch(err) {
-    submitBtn.disabled = false;
-    show("Error: " + err);
-  }
-});
 </script>
 
 </body>
