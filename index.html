@@ -10,8 +10,10 @@ body{font-family:Arial;padding:15px;background:#f4f4f4}
 .card{background:white;padding:15px;border-radius:12px;margin-bottom:15px}
 input,select,textarea,button{width:100%;padding:12px;margin:8px 0;font-size:16px;box-sizing:border-box}
 button{background:#000;color:white;border:0;border-radius:10px}
+button:disabled{background:#888}
 #reader{width:100%;margin-top:10px}
 .status{background:#eef;padding:10px;border-radius:8px;white-space:pre-wrap}
+.required{color:red}
 </style>
 </head>
 
@@ -20,10 +22,10 @@ button{background:#000;color:white;border:0;border-radius:10px}
 <div class="card">
 <h2>Return Package Scanner</h2>
 
-<label>Driver Name</label>
+<label>Driver Name <span class="required">*</span></label>
 <input id="driverName" placeholder="Enter driver name">
 
-<label>Scanned TBA / Barcode</label>
+<label>Scanned TBA / Barcode <span class="required">*</span></label>
 <input id="tbaCode" placeholder="Scan or type TBA">
 
 <button id="scanBtn">Start Camera Scan</button>
@@ -33,7 +35,7 @@ button{background:#000;color:white;border:0;border-radius:10px}
 </div>
 
 <div class="card">
-<label>Return Reason</label>
+<label>Return Reason <span class="required">*</span></label>
 <select id="reason">
 <option value="">Select Reason</option>
 <option>Business Closed</option>
@@ -46,10 +48,10 @@ button{background:#000;color:white;border:0;border-radius:10px}
 <option>Other</option>
 </select>
 
-<label>Notes</label>
-<textarea id="notes"></textarea>
+<label>Notes <span class="required">*</span></label>
+<textarea id="notes" placeholder="Required: explain the return"></textarea>
 
-<label>Photo Proof</label>
+<label>Photo Proof <span class="required">*</span></label>
 <input id="photo" type="file" accept="image/*" capture="environment">
 
 <button id="submitBtn">Submit Return</button>
@@ -65,16 +67,28 @@ style="display:none;">
 
 <script>
 const statusBox = document.getElementById("status");
-let scanner;
+const submitBtn = document.getElementById("submitBtn");
+let scanner = null;
 let scannerRunning = false;
 
 function show(msg){
   statusBox.innerText = msg;
 }
 
+async function stopScanner(){
+  try {
+    if (scanner && scannerRunning) {
+      await scanner.stop();
+      await scanner.clear();
+    }
+  } catch(e) {}
+  scanner = null;
+  scannerRunning = false;
+}
+
 async function startScanner(){
   try {
-    if (scannerRunning) return;
+    await stopScanner();
 
     show("Opening camera...");
     document.getElementById("reader").innerHTML = "";
@@ -88,15 +102,10 @@ async function startScanner(){
       async function(decodedText){
         document.getElementById("tbaCode").value = decodedText;
         show("Scanned: " + decodedText);
-
-        try {
-          await scanner.stop();
-          scannerRunning = false;
-        } catch(e) {
-          scannerRunning = false;
-        }
+        await stopScanner();
       }
     );
+
   } catch(err) {
     scannerRunning = false;
     show("Camera error: " + err);
@@ -132,7 +141,44 @@ function compressImage(file) {
   });
 }
 
+function validateForm(){
+  const driver = document.getElementById("driverName").value.trim();
+  const tba = document.getElementById("tbaCode").value.trim();
+  const reason = document.getElementById("reason").value;
+  const notes = document.getElementById("notes").value.trim();
+  const photoFile = document.getElementById("photo").files[0];
+
+  if (!driver) {
+    show("Driver name is required.");
+    return false;
+  }
+
+  if (!tba) {
+    show("TBA/barcode is required. Scan or type it.");
+    return false;
+  }
+
+  if (!reason) {
+    show("Return reason is required.");
+    return false;
+  }
+
+  if (!notes) {
+    show("Notes are required.");
+    return false;
+  }
+
+  if (!photoFile) {
+    show("Photo proof is required.");
+    return false;
+  }
+
+  return true;
+}
+
 document.getElementById("submitBtn").addEventListener("click", async function(){
+
+  if (!validateForm()) return;
 
   const driver = document.getElementById("driverName").value.trim();
   const tba = document.getElementById("tbaCode").value.trim();
@@ -140,18 +186,10 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
   const notes = document.getElementById("notes").value.trim();
   const photoFile = document.getElementById("photo").files[0];
 
-  if (!driver || !tba || !reason) {
-    show("Driver, TBA, and reason are required.");
-    return;
-  }
-
-  if (!photoFile) {
-    show("Photo required.");
-    return;
-  }
-
   try {
+    submitBtn.disabled = true;
     show("Compressing photo...");
+
     const photoBase64 = await compressImage(photoFile);
 
     const data = {
@@ -168,7 +206,7 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
     show("Submitting...");
     document.getElementById("hiddenForm").submit();
 
-    setTimeout(() => {
+    setTimeout(async () => {
 
       const another = confirm("Return submitted successfully.\n\nSubmit another package?");
 
@@ -178,16 +216,22 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
         document.getElementById("notes").value = "";
         document.getElementById("photo").value = "";
 
-        show("Ready for next package. Opening scanner...");
-        setTimeout(startScanner, 700);
+        show("Ready for next package. Tap Start Camera Scan.");
+
+        setTimeout(() => {
+          startScanner();
+        }, 500);
 
       } else {
         show("All done. You can close the page.");
       }
 
-    }, 2000);
+      submitBtn.disabled = false;
+
+    }, 2500);
 
   } catch(err) {
+    submitBtn.disabled = false;
     show("Error: " + err);
   }
 });
