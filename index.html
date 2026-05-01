@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Return Package Scanner</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
 <style>
 body{font-family:Arial;padding:15px;background:#f4f4f4}
 .card{background:white;padding:15px;border-radius:12px;margin-bottom:15px}
@@ -13,18 +14,20 @@ button{background:#000;color:white;border:0;border-radius:10px}
 .status{background:#eef;padding:10px;border-radius:8px;white-space:pre-wrap}
 </style>
 </head>
+
 <body>
 
 <div class="card">
 <h2>Return Package Scanner</h2>
 
 <label>Driver Name</label>
-<input id="driverName">
+<input id="driverName" placeholder="Enter driver name">
 
 <label>Scanned TBA / Barcode</label>
-<input id="tbaCode">
+<input id="tbaCode" placeholder="Scan or type TBA">
 
 <button id="scanBtn">Start Camera Scan</button>
+
 <div id="reader"></div>
 <div id="status" class="status">Ready.</div>
 </div>
@@ -54,7 +57,9 @@ button{background:#000;color:white;border:0;border-radius:10px}
 
 <iframe name="hiddenFrame" style="display:none;"></iframe>
 
-<form id="hiddenForm" method="POST" target="hiddenFrame" action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec" style="display:none;">
+<form id="hiddenForm" method="POST" target="hiddenFrame"
+action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec"
+style="display:none;">
   <textarea name="payload" id="payload"></textarea>
 </form>
 
@@ -62,7 +67,9 @@ button{background:#000;color:white;border:0;border-radius:10px}
 const statusBox = document.getElementById("status");
 let scanner;
 
-function show(msg){ statusBox.innerText = msg; }
+function show(msg){
+  statusBox.innerText = msg;
+}
 
 document.getElementById("scanBtn").addEventListener("click", async function(){
   try {
@@ -101,7 +108,7 @@ function compressImage(file) {
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      resolve(canvas.toDataURL("image/jpeg", 0.35));
+      resolve(canvas.toDataURL("image/jpeg", 0.4));
     };
 
     reader.onerror = reject;
@@ -111,12 +118,12 @@ function compressImage(file) {
 }
 
 document.getElementById("submitBtn").addEventListener("click", async function(){
-  const photoFile = document.getElementById("photo").files[0];
 
   const driver = document.getElementById("driverName").value.trim();
   const tba = document.getElementById("tbaCode").value.trim();
   const reason = document.getElementById("reason").value;
   const notes = document.getElementById("notes").value.trim();
+  const photoFile = document.getElementById("photo").files[0];
 
   if (!driver || !tba || !reason) {
     show("Driver, TBA, and reason are required.");
@@ -137,22 +144,30 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
       tba,
       reason,
       notes,
-      photoName: tba + "_return_photo.jpg",
+      photoName: tba + "_return.jpg",
       photoBase64
     };
 
     document.getElementById("payload").value = JSON.stringify(data);
 
-    show("Submitting to Google Sheet...");
+    show("Submitting...");
     document.getElementById("hiddenForm").submit();
 
     setTimeout(() => {
-      show("Submitted. Check Google Sheet for photo link.");
-      document.getElementById("tbaCode").value = "";
-      document.getElementById("reason").value = "";
-      document.getElementById("notes").value = "";
-      document.getElementById("photo").value = "";
-    }, 2500);
+
+      const another = confirm("Return submitted successfully.\n\nSubmit another package?");
+
+      if (another) {
+        document.getElementById("tbaCode").value = "";
+        document.getElementById("reason").value = "";
+        document.getElementById("notes").value = "";
+        document.getElementById("photo").value = "";
+        show("Ready for next package.");
+      } else {
+        show("All done. You can close the page.");
+      }
+
+    }, 2000);
 
   } catch(err) {
     show("Error: " + err);
