@@ -17,6 +17,22 @@ body{
   max-width:500px;
   margin:auto;
 }
+.top-bar{
+  display:flex;
+  justify-content:flex-end;
+  margin-bottom:10px;
+}
+.lang-btn{
+  width:auto;
+  padding:9px 14px;
+  margin:0;
+  background:#222;
+  color:white;
+  border:none;
+  border-radius:20px;
+  font-size:14px;
+  font-weight:700;
+}
 .title{
   text-align:center;
   margin-bottom:22px;
@@ -95,58 +111,49 @@ button:disabled{
 
 <div class="container">
 
+  <div class="top-bar">
+    <button class="lang-btn" onclick="toggleLanguage()">EN / ES</button>
+  </div>
+
   <div class="title">
-    <h1>Return to Station (RTS)</h1>
-    <h2>Standard Operating Procedure</h2>
+    <h1 id="titleMain">Return to Station (RTS)</h1>
+    <h2 id="titleSub">Standard Operating Procedure</h2>
   </div>
 
   <div class="card">
-    <div class="warning">DO NOT WAIT UNTIL THE END OF YOUR ROUTE!</div>
+    <div id="warningText" class="warning">DO NOT WAIT UNTIL THE END OF YOUR ROUTE!</div>
 
-    <p>If a delivery cannot be completed, contact Dispatch immediately.</p>
+    <p id="guidelineIntro">If a delivery cannot be completed, contact Dispatch immediately.</p>
 
     <ol>
-      <li>Call and text the customer.</li>
-      <li>If no response, contact Driver Support.</li>
-      <li>If still unable to deliver, contact Dispatch for final steps.</li>
+      <li id="step1">Call and text the customer.</li>
+      <li id="step2">If no response, contact Driver Support.</li>
+      <li id="step3">If still unable to deliver, contact Dispatch for final steps.</li>
     </ol>
 
-    <p><strong>Failure to follow these steps will negatively impact driver scores.</strong></p>
+    <p><strong id="scoreWarning">Failure to follow these steps will negatively impact driver scores.</strong></p>
   </div>
 
   <div class="card">
 
-    <label>Driver Name</label>
+    <label id="driverLabel">Driver Name</label>
     <input id="driverName" placeholder="Enter driver name">
 
-    <label>TBA / Barcode</label>
+    <label id="tbaLabel">TBA / Barcode</label>
     <input id="tbaCode" placeholder="Scan or type TBA">
 
     <button id="scanBtn" onclick="startScanner()">Start Camera Scan</button>
 
     <div id="reader"></div>
 
-    <label>Reason of RTS</label>
+    <label id="categoryLabel">Reason of RTS</label>
     <select id="category">
-      <option value="">Select</option>
-      <option>ACCESS ISSUE</option>
-      <option>BUSINESS CLOSED</option>
-      <option>CANCELLED</option>
-      <option>CUSTOMER ISSUE</option>
-      <option>EMPTY PACKAGE</option>
-      <option>INCORRECT ADDRESS</option>
-      <option>LOCKER ISSUES</option>
-      <option>CUSTOMER RETURN</option>
-      <option>MISSORTED PACKAGE</option>
-      <option>OTP</option>
-      <option>UNABLE TO PICKUP</option>
-      <option>UNSAFE DELIVERY</option>
-      <option>UNABLE TO FIND ADDRESS</option>
+      <option value="" data-en="Select" data-es="Seleccionar">Select</option>
     </select>
 
     <select id="reason" class="hidden"></select>
 
-    <label>Photo</label>
+    <label id="photoLabel">Photo</label>
     <input id="photo" type="file" accept="image/*" capture="environment">
 
     <button id="submitBtn" onclick="submitForm()">Submit RTS</button>
@@ -164,56 +171,191 @@ style="display:none;">
 </form>
 
 <script>
+let currentLang = "en";
+
+const categories = [
+  { value:"ACCESS ISSUE", en:"ACCESS ISSUE", es:"PROBLEMA DE ACCESO" },
+  { value:"BUSINESS CLOSED", en:"BUSINESS CLOSED", es:"NEGOCIO CERRADO" },
+  { value:"CANCELLED", en:"CANCELLED", es:"CANCELADO" },
+  { value:"CUSTOMER ISSUE", en:"CUSTOMER ISSUE", es:"PROBLEMA CON CLIENTE" },
+  { value:"EMPTY PACKAGE", en:"EMPTY PACKAGE", es:"PAQUETE VACÍO" },
+  { value:"INCORRECT ADDRESS", en:"INCORRECT ADDRESS", es:"DIRECCIÓN INCORRECTA" },
+  { value:"LOCKER ISSUES", en:"LOCKER ISSUES", es:"PROBLEMA CON LOCKER" },
+  { value:"CUSTOMER RETURN", en:"CUSTOMER RETURN", es:"DEVOLUCIÓN DEL CLIENTE" },
+  { value:"MISSORTED PACKAGE", en:"MISSORTED PACKAGE", es:"PAQUETE MAL CLASIFICADO" },
+  { value:"OTP", en:"OTP", es:"CÓDIGO OTP" },
+  { value:"UNABLE TO PICKUP", en:"UNABLE TO PICKUP", es:"NO SE PUDO RECOGER" },
+  { value:"UNSAFE DELIVERY", en:"UNSAFE DELIVERY", es:"ENTREGA INSEGURA" },
+  { value:"UNABLE TO FIND ADDRESS", en:"UNABLE TO FIND ADDRESS", es:"NO SE PUDO ENCONTRAR LA DIRECCIÓN" }
+];
+
 const reasonMap = {
   "CUSTOMER ISSUE":[
-    "REQUESTED FUTURE DELIVERY DATE",
-    "NO LONGER WANTS PACKAGE",
-    "UNAVAILABLE"
+    { value:"REQUESTED FUTURE DELIVERY DATE", en:"REQUESTED FUTURE DELIVERY DATE", es:"SOLICITÓ ENTREGA FUTURA" },
+    { value:"NO LONGER WANTS PACKAGE", en:"NO LONGER WANTS PACKAGE", es:"YA NO QUIERE EL PAQUETE" },
+    { value:"UNAVAILABLE", en:"UNAVAILABLE", es:"NO DISPONIBLE" }
   ],
   "LOCKER ISSUES":[
-    "PICKUP",
-    "FULL",
-    "NOT WORKING"
+    { value:"PICKUP", en:"PICKUP", es:"RECOGIDA" },
+    { value:"FULL", en:"FULL", es:"LLENO" },
+    { value:"NOT WORKING", en:"NOT WORKING", es:"NO FUNCIONA" }
   ],
   "OTP":[
-    "CODE UNAVAILABLE",
-    "CUSTOMER UNAVAILABLE"
+    { value:"CODE UNAVAILABLE", en:"CODE UNAVAILABLE", es:"CÓDIGO NO DISPONIBLE" },
+    { value:"CUSTOMER UNAVAILABLE", en:"CUSTOMER UNAVAILABLE", es:"CLIENTE NO DISPONIBLE" }
   ],
   "UNSAFE DELIVERY":[
-    "DUE TO DOG",
-    "DUE TO BAD WEATHER",
-    "UNSAFE TO LEAVE PACKAGE",
-    "ROAD CLOSED"
+    { value:"DUE TO DOG", en:"DUE TO DOG", es:"POR PERRO" },
+    { value:"DUE TO BAD WEATHER", en:"DUE TO BAD WEATHER", es:"POR MAL CLIMA" },
+    { value:"UNSAFE TO LEAVE PACKAGE", en:"UNSAFE TO LEAVE PACKAGE", es:"NO ES SEGURO DEJAR EL PAQUETE" },
+    { value:"ROAD CLOSED", en:"ROAD CLOSED", es:"CAMINO CERRADO" }
   ]
+};
+
+const text = {
+  en: {
+    titleMain: "Return to Station (RTS)",
+    titleSub: "Standard Operating Procedure",
+    warningText: "DO NOT WAIT UNTIL THE END OF YOUR ROUTE!",
+    guidelineIntro: "If a delivery cannot be completed, contact Dispatch immediately.",
+    step1: "Call and text the customer.",
+    step2: "If no response, contact Driver Support.",
+    step3: "If still unable to deliver, contact Dispatch for final steps.",
+    scoreWarning: "Failure to follow these steps will negatively impact driver scores.",
+    driverLabel: "Driver Name",
+    driverPlaceholder: "Enter driver name",
+    tbaLabel: "TBA / Barcode",
+    tbaPlaceholder: "Scan or type TBA",
+    scanBtn: "Start Camera Scan",
+    categoryLabel: "Reason of RTS",
+    selectCategory: "Select",
+    selectReason: "Select specific reason",
+    photoLabel: "Photo",
+    submitBtn: "Submit RTS",
+    driverRequired: "Driver name is required.",
+    tbaRequired: "TBA / Barcode is required.",
+    categoryRequired: "Reason of RTS is required.",
+    reasonRequired: "Specific reason is required.",
+    photoRequired: "Photo is required.",
+    cameraError: "Camera error. Please allow camera access and try again.",
+    submitting: "Submitting...",
+    submitted: "RTS submitted successfully.\n\nSubmit another package?",
+    errorSubmit: "Error submitting RTS. Please try again."
+  },
+  es: {
+    titleMain: "Retorno a Estación (RTS)",
+    titleSub: "Procedimiento Operativo Estándar",
+    warningText: "¡NO ESPERE HASTA EL FINAL DE SU RUTA!",
+    guidelineIntro: "Si no puede completar una entrega, contacte a Despacho inmediatamente.",
+    step1: "Llame y envíe un mensaje al cliente.",
+    step2: "Si no hay respuesta, contacte a Soporte de Conductores.",
+    step3: "Si aún no puede entregar, contacte a Despacho para los pasos finales.",
+    scoreWarning: "No seguir estos pasos afectará negativamente la puntuación del conductor.",
+    driverLabel: "Nombre del Conductor",
+    driverPlaceholder: "Ingrese el nombre del conductor",
+    tbaLabel: "TBA / Código",
+    tbaPlaceholder: "Escanee o escriba el TBA",
+    scanBtn: "Iniciar Escaneo con Cámara",
+    categoryLabel: "Motivo de RTS",
+    selectCategory: "Seleccionar",
+    selectReason: "Seleccione motivo específico",
+    photoLabel: "Foto",
+    submitBtn: "Enviar RTS",
+    driverRequired: "El nombre del conductor es requerido.",
+    tbaRequired: "El TBA / código es requerido.",
+    categoryRequired: "El motivo de RTS es requerido.",
+    reasonRequired: "El motivo específico es requerido.",
+    photoRequired: "La foto es requerida.",
+    cameraError: "Error de cámara. Permita el acceso a la cámara e intente de nuevo.",
+    submitting: "Enviando...",
+    submitted: "RTS enviado correctamente.\n\n¿Enviar otro paquete?",
+    errorSubmit: "Error al enviar RTS. Intente de nuevo."
+  }
 };
 
 let scanner = null;
 let scannerRunning = false;
 
-document.getElementById("category").addEventListener("change", function(){
-  const cat = this.value;
+function populateCategories(){
+  const categorySelect = document.getElementById("category");
+  const selectedValue = categorySelect.value;
+
+  categorySelect.innerHTML = "";
+
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = text[currentLang].selectCategory;
+  categorySelect.appendChild(defaultOption);
+
+  categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat.value;
+    option.textContent = cat[currentLang];
+    categorySelect.appendChild(option);
+  });
+
+  categorySelect.value = selectedValue;
+  updateReasonDropdown();
+}
+
+function updateReasonDropdown(){
+  const category = document.getElementById("category").value;
   const reasonDropdown = document.getElementById("reason");
+  const selectedReason = reasonDropdown.value;
 
   reasonDropdown.innerHTML = "";
 
-  if(reasonMap[cat]){
+  if(reasonMap[category]){
     reasonDropdown.classList.remove("hidden");
 
     const first = document.createElement("option");
     first.value = "";
-    first.textContent = "Select specific reason";
+    first.textContent = text[currentLang].selectReason;
     reasonDropdown.appendChild(first);
 
-    reasonMap[cat].forEach(item => {
+    reasonMap[category].forEach(item => {
       const option = document.createElement("option");
-      option.value = item;
-      option.textContent = item;
+      option.value = item.value;
+      option.textContent = item[currentLang];
       reasonDropdown.appendChild(option);
     });
+
+    reasonDropdown.value = selectedReason;
   } else {
     reasonDropdown.classList.add("hidden");
   }
-});
+}
+
+function applyLanguage(){
+  const t = text[currentLang];
+
+  document.getElementById("titleMain").textContent = t.titleMain;
+  document.getElementById("titleSub").textContent = t.titleSub;
+  document.getElementById("warningText").textContent = t.warningText;
+  document.getElementById("guidelineIntro").textContent = t.guidelineIntro;
+  document.getElementById("step1").textContent = t.step1;
+  document.getElementById("step2").textContent = t.step2;
+  document.getElementById("step3").textContent = t.step3;
+  document.getElementById("scoreWarning").textContent = t.scoreWarning;
+
+  document.getElementById("driverLabel").textContent = t.driverLabel;
+  document.getElementById("driverName").placeholder = t.driverPlaceholder;
+  document.getElementById("tbaLabel").textContent = t.tbaLabel;
+  document.getElementById("tbaCode").placeholder = t.tbaPlaceholder;
+  document.getElementById("scanBtn").textContent = t.scanBtn;
+  document.getElementById("categoryLabel").textContent = t.categoryLabel;
+  document.getElementById("photoLabel").textContent = t.photoLabel;
+  document.getElementById("submitBtn").textContent = t.submitBtn;
+
+  populateCategories();
+}
+
+function toggleLanguage(){
+  currentLang = currentLang === "en" ? "es" : "en";
+  applyLanguage();
+}
+
+document.getElementById("category").addEventListener("change", updateReasonDropdown);
 
 async function stopScanner(){
   try{
@@ -237,13 +379,13 @@ async function startScanner(){
     await scanner.start(
       { facingMode:"environment" },
       { fps:10, qrbox:250 },
-      async function(text){
-        document.getElementById("tbaCode").value = text;
+      async function(scannedText){
+        document.getElementById("tbaCode").value = scannedText;
         await stopScanner();
       }
     );
   }catch(err){
-    alert("Camera error. Please allow camera access and try again.");
+    alert(text[currentLang].cameraError);
     scannerRunning = false;
   }
 }
@@ -284,33 +426,33 @@ async function submitForm(){
   const photoFile = document.getElementById("photo").files[0];
 
   if(!driver){
-    alert("Driver name is required.");
+    alert(text[currentLang].driverRequired);
     return;
   }
 
   if(!tba){
-    alert("TBA / Barcode is required.");
+    alert(text[currentLang].tbaRequired);
     return;
   }
 
   if(!category){
-    alert("Reason of RTS is required.");
+    alert(text[currentLang].categoryRequired);
     return;
   }
 
   if(reasonMap[category] && !reason){
-    alert("Specific reason is required.");
+    alert(text[currentLang].reasonRequired);
     return;
   }
 
   if(!photoFile){
-    alert("Photo is required.");
+    alert(text[currentLang].photoRequired);
     return;
   }
 
   try{
     submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting...";
+    submitBtn.textContent = text[currentLang].submitting;
 
     const photoBase64 = await compressImage(photoFile);
 
@@ -323,14 +465,15 @@ async function submitForm(){
       specificReason: reason,
       notes: "",
       photoName: tba + "_return.jpg",
-      photoBase64: photoBase64
+      photoBase64: photoBase64,
+      languageUsed: currentLang
     };
 
     document.getElementById("payload").value = JSON.stringify(data);
     document.getElementById("hiddenForm").submit();
 
     setTimeout(()=>{
-      const another = confirm("RTS submitted successfully.\n\nSubmit another package?");
+      const another = confirm(text[currentLang].submitted);
 
       if(another){
         document.getElementById("tbaCode").value = "";
@@ -343,15 +486,17 @@ async function submitForm(){
       }
 
       submitBtn.disabled = false;
-      submitBtn.textContent = "Submit RTS";
+      submitBtn.textContent = text[currentLang].submitBtn;
     }, 2500);
 
   }catch(err){
     submitBtn.disabled = false;
-    submitBtn.textContent = "Submit RTS";
-    alert("Error submitting RTS. Please try again.");
+    submitBtn.textContent = text[currentLang].submitBtn;
+    alert(text[currentLang].errorSubmit);
   }
 }
+
+applyLanguage();
 </script>
 
 </body>
