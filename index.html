@@ -66,29 +66,44 @@ style="display:none;">
 <script>
 const statusBox = document.getElementById("status");
 let scanner;
+let scannerRunning = false;
 
 function show(msg){
   statusBox.innerText = msg;
 }
 
-document.getElementById("scanBtn").addEventListener("click", async function(){
+async function startScanner(){
   try {
+    if (scannerRunning) return;
+
     show("Opening camera...");
+    document.getElementById("reader").innerHTML = "";
+
     scanner = new Html5Qrcode("reader");
+    scannerRunning = true;
 
     await scanner.start(
       { facingMode: "environment" },
       { fps: 10, qrbox: 250 },
-      function(decodedText){
+      async function(decodedText){
         document.getElementById("tbaCode").value = decodedText;
         show("Scanned: " + decodedText);
-        scanner.stop();
+
+        try {
+          await scanner.stop();
+          scannerRunning = false;
+        } catch(e) {
+          scannerRunning = false;
+        }
       }
     );
   } catch(err) {
+    scannerRunning = false;
     show("Camera error: " + err);
   }
-});
+}
+
+document.getElementById("scanBtn").addEventListener("click", startScanner);
 
 function compressImage(file) {
   return new Promise((resolve, reject) => {
@@ -162,7 +177,10 @@ document.getElementById("submitBtn").addEventListener("click", async function(){
         document.getElementById("reason").value = "";
         document.getElementById("notes").value = "";
         document.getElementById("photo").value = "";
-        show("Ready for next package.");
+
+        show("Ready for next package. Opening scanner...");
+        setTimeout(startScanner, 700);
+
       } else {
         show("All done. You can close the page.");
       }
