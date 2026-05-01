@@ -2,75 +2,88 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>RTS Scanner</title>
+<title>Return to Station RTS SOP</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
 body{
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background:#f5f6f7;
   margin:0;
   padding:20px;
+  color:#111;
 }
 .container{
   max-width:500px;
   margin:auto;
 }
-h1{
-  font-size:28px;
-  margin-bottom:20px;
+.title{
+  text-align:center;
+  margin-bottom:22px;
+}
+.title h1{
+  font-size:26px;
+  margin:0;
+  font-weight:800;
+}
+.title h2{
+  font-size:18px;
+  margin:6px 0 0;
+  font-weight:600;
 }
 .card{
   background:white;
-  padding:20px;
-  border-radius:16px;
+  padding:22px;
+  border-radius:18px;
   margin-bottom:20px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
 }
 .warning{
-  font-size:18px;
-  font-weight:800;
-  margin:15px 0;
+  text-align:center;
+  font-weight:900;
+  font-size:16px;
+  white-space:nowrap;
+  margin-bottom:18px;
 }
 p{
   margin:10px 0;
   line-height:1.5;
 }
 ol{
-  padding-left:20px;
-  margin-top:10px;
+  padding-left:22px;
+  margin-top:12px;
+  line-height:1.5;
 }
 label{
   font-weight:700;
-  margin-top:15px;
+  margin-top:18px;
   display:block;
 }
 input, select{
   width:100%;
-  padding:14px;
+  padding:15px;
   margin-top:8px;
   border-radius:12px;
   border:1px solid #ddd;
   font-size:16px;
+  box-sizing:border-box;
 }
 button{
   width:100%;
   padding:16px;
-  margin-top:20px;
+  margin-top:22px;
   background:black;
   color:white;
   border:none;
   border-radius:12px;
   font-size:16px;
-  font-weight:700;
+  font-weight:800;
+}
+button:disabled{
+  background:#777;
 }
 #reader{
   margin-top:15px;
-}
-.status{
-  margin-top:15px;
-  padding:12px;
-  background:#eef;
-  border-radius:10px;
 }
 .hidden{
   display:none;
@@ -82,144 +95,263 @@ button{
 
 <div class="container">
 
-<h1>RTS Scanner</h1>
+  <div class="title">
+    <h1>Return to Station (RTS)</h1>
+    <h2>Standard Operating Procedure</h2>
+  </div>
 
-<div class="card">
+  <div class="card">
+    <div class="warning">DO NOT WAIT UNTIL THE END OF YOUR ROUTE!</div>
 
-  <div class="warning">DO NOT WAIT UNTIL THE END OF YOUR ROUTE!</div>
+    <p>If a delivery cannot be completed, contact Dispatch immediately.</p>
 
-  <p>If a delivery cannot be completed, contact Dispatch immediately.</p>
+    <ol>
+      <li>Call and text the customer.</li>
+      <li>If no response, contact Driver Support.</li>
+      <li>If still unable to deliver, contact Dispatch for final steps.</li>
+    </ol>
 
-  <ol>
-    <li>Call and text the customer.</li>
-    <li>If no response, contact Driver Support.</li>
-    <li>If still unable to deliver, contact Dispatch for final steps.</li>
-  </ol>
+    <p><strong>Failure to follow these steps will negatively impact driver scores.</strong></p>
+  </div>
 
-  <p><strong>Failure to follow these steps will negatively impact driver scores.</strong></p>
+  <div class="card">
+
+    <label>Driver Name</label>
+    <input id="driverName" placeholder="Enter driver name">
+
+    <label>TBA / Barcode</label>
+    <input id="tbaCode" placeholder="Scan or type TBA">
+
+    <button id="scanBtn" onclick="startScanner()">Start Camera Scan</button>
+
+    <div id="reader"></div>
+
+    <label>Reason of RTS</label>
+    <select id="category">
+      <option value="">Select</option>
+      <option>ACCESS ISSUE</option>
+      <option>BUSINESS CLOSED</option>
+      <option>CANCELLED</option>
+      <option>CUSTOMER ISSUE</option>
+      <option>EMPTY PACKAGE</option>
+      <option>INCORRECT ADDRESS</option>
+      <option>LOCKER ISSUES</option>
+      <option>CUSTOMER RETURN</option>
+      <option>MISSORTED PACKAGE</option>
+      <option>OTP</option>
+      <option>UNABLE TO PICKUP</option>
+      <option>UNSAFE DELIVERY</option>
+      <option>UNABLE TO FIND ADDRESS</option>
+    </select>
+
+    <select id="reason" class="hidden"></select>
+
+    <label>Photo</label>
+    <input id="photo" type="file" accept="image/*" capture="environment">
+
+    <button id="submitBtn" onclick="submitForm()">Submit RTS</button>
+
+  </div>
 
 </div>
 
-<div class="card">
+<iframe name="hiddenFrame" style="display:none;"></iframe>
 
-  <label>Driver Name</label>
-  <input id="driverName">
-
-  <label>TBA / Barcode</label>
-  <input id="tbaCode">
-
-  <button onclick="startScanner()">Start Camera Scan</button>
-
-  <div id="reader"></div>
-  <div id="status" class="status">Ready</div>
-
-  <label>Reason of RTS</label>
-  <select id="category">
-    <option value="">Select</option>
-    <option>ACCESS ISSUE</option>
-    <option>BUSINESS CLOSED</option>
-    <option>CANCELLED</option>
-    <option>CUSTOMER ISSUE</option>
-    <option>EMPTY PACKAGE</option>
-    <option>INCORRECT ADDRESS</option>
-    <option>LOCKER ISSUES</option>
-    <option>CUSTOMER RETURN</option>
-    <option>MISSORTED PACKAGE</option>
-    <option>OTP</option>
-    <option>UNABLE TO PICKUP</option>
-    <option>UNSAFE DELIVERY</option>
-    <option>UNABLE TO FIND ADDRESS</option>
-  </select>
-
-  <select id="reason" class="hidden"></select>
-
-  <label>Photo</label>
-  <input id="photo" type="file" accept="image/*" capture="environment">
-
-  <button onclick="submitForm()">Submit RTS</button>
-
-</div>
-
-</div>
+<form id="hiddenForm" method="POST" target="hiddenFrame"
+action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec"
+style="display:none;">
+<textarea name="payload" id="payload"></textarea>
+</form>
 
 <script>
-
 const reasonMap = {
-"CUSTOMER ISSUE":[
-"REQUESTED FUTURE DELIVERY DATE",
-"NO LONGER WANTS PACKAGE",
-"UNAVAILABLE"
-],
-"LOCKER ISSUES":[
-"PICKUP","FULL","NOT WORKING"
-],
-"OTP":[
-"CODE UNAVAILABLE","CUSTOMER UNAVAILABLE"
-],
-"UNSAFE DELIVERY":[
-"DUE TO DOG","DUE TO BAD WEATHER","UNSAFE TO LEAVE PACKAGE","ROAD CLOSED"
-]
+  "CUSTOMER ISSUE":[
+    "REQUESTED FUTURE DELIVERY DATE",
+    "NO LONGER WANTS PACKAGE",
+    "UNAVAILABLE"
+  ],
+  "LOCKER ISSUES":[
+    "PICKUP",
+    "FULL",
+    "NOT WORKING"
+  ],
+  "OTP":[
+    "CODE UNAVAILABLE",
+    "CUSTOMER UNAVAILABLE"
+  ],
+  "UNSAFE DELIVERY":[
+    "DUE TO DOG",
+    "DUE TO BAD WEATHER",
+    "UNSAFE TO LEAVE PACKAGE",
+    "ROAD CLOSED"
+  ]
 };
 
-const statusBox = document.getElementById("status");
+let scanner = null;
+let scannerRunning = false;
 
-function show(msg){statusBox.innerText=msg;}
+document.getElementById("category").addEventListener("change", function(){
+  const cat = this.value;
+  const reasonDropdown = document.getElementById("reason");
 
-document.getElementById("category").addEventListener("change",function(){
-const cat=this.value;
-const r=document.getElementById("reason");
+  reasonDropdown.innerHTML = "";
 
-r.innerHTML="";
+  if(reasonMap[cat]){
+    reasonDropdown.classList.remove("hidden");
 
-if(reasonMap[cat]){
-r.classList.remove("hidden");
-reasonMap[cat].forEach(x=>{
-let o=document.createElement("option");
-o.value=x;
-o.textContent=x;
-r.appendChild(o);
+    const first = document.createElement("option");
+    first.value = "";
+    first.textContent = "Select specific reason";
+    reasonDropdown.appendChild(first);
+
+    reasonMap[cat].forEach(item => {
+      const option = document.createElement("option");
+      option.value = item;
+      option.textContent = item;
+      reasonDropdown.appendChild(option);
+    });
+  } else {
+    reasonDropdown.classList.add("hidden");
+  }
 });
-}else{
-r.classList.add("hidden");
-}
-});
 
-function startScanner(){
-const scanner=new Html5Qrcode("reader");
-
-scanner.start(
-{facingMode:"environment"},
-{fps:10,qrbox:250},
-(text)=>{
-document.getElementById("tbaCode").value=text;
-scanner.stop();
-show("Scanned "+text);
+async function stopScanner(){
+  try{
+    if(scanner && scannerRunning){
+      await scanner.stop();
+      await scanner.clear();
+    }
+  }catch(e){}
+  scanner = null;
+  scannerRunning = false;
 }
-);
+
+async function startScanner(){
+  try{
+    await stopScanner();
+    document.getElementById("reader").innerHTML = "";
+
+    scanner = new Html5Qrcode("reader");
+    scannerRunning = true;
+
+    await scanner.start(
+      { facingMode:"environment" },
+      { fps:10, qrbox:250 },
+      async function(text){
+        document.getElementById("tbaCode").value = text;
+        await stopScanner();
+      }
+    );
+  }catch(err){
+    alert("Camera error. Please allow camera access and try again.");
+    scannerRunning = false;
+  }
+}
+
+function compressImage(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    const img = new Image();
+
+    reader.onload = e => img.src = e.target.result;
+
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxWidth = 600;
+      const scale = Math.min(1, maxWidth / img.width);
+
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+
+      canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+
+      resolve(canvas.toDataURL("image/jpeg",0.4));
+    };
+
+    reader.onerror = reject;
+    img.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 async function submitForm(){
-const driver=driverName.value.trim();
-const tba=tbaCode.value.trim();
-const cat=category.value;
-const photoFile=photo.files[0];
+  const submitBtn = document.getElementById("submitBtn");
 
-if(!driver||!tba||!cat||!photoFile){
-show("Fill all required fields");
-return;
+  const driver = document.getElementById("driverName").value.trim();
+  const tba = document.getElementById("tbaCode").value.trim();
+  const category = document.getElementById("category").value;
+  const reason = document.getElementById("reason").value;
+  const photoFile = document.getElementById("photo").files[0];
+
+  if(!driver){
+    alert("Driver name is required.");
+    return;
+  }
+
+  if(!tba){
+    alert("TBA / Barcode is required.");
+    return;
+  }
+
+  if(!category){
+    alert("Reason of RTS is required.");
+    return;
+  }
+
+  if(reasonMap[category] && !reason){
+    alert("Specific reason is required.");
+    return;
+  }
+
+  if(!photoFile){
+    alert("Photo is required.");
+    return;
+  }
+
+  try{
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+
+    const photoBase64 = await compressImage(photoFile);
+
+    const data = {
+      driver: driver,
+      tba: tba,
+      category: category,
+      reason: reason,
+      returnType: category,
+      specificReason: reason,
+      notes: "",
+      photoName: tba + "_return.jpg",
+      photoBase64: photoBase64
+    };
+
+    document.getElementById("payload").value = JSON.stringify(data);
+    document.getElementById("hiddenForm").submit();
+
+    setTimeout(()=>{
+      const another = confirm("RTS submitted successfully.\n\nSubmit another package?");
+
+      if(another){
+        document.getElementById("tbaCode").value = "";
+        document.getElementById("category").value = "";
+        document.getElementById("reason").innerHTML = "";
+        document.getElementById("reason").classList.add("hidden");
+        document.getElementById("photo").value = "";
+
+        setTimeout(startScanner, 700);
+      }
+
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit RTS";
+    }, 2500);
+
+  }catch(err){
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Submit RTS";
+    alert("Error submitting RTS. Please try again.");
+  }
 }
-
-show("Submitted");
-
-setTimeout(()=>{
-if(confirm("Submit another?")){
-tbaCode.value="";
-photo.value="";
-startScanner();
-}
-},1500);
-}
-
 </script>
 
 </body>
