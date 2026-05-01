@@ -2,239 +2,207 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Return Package Scanner</title>
+<title>RTS Scanner</title>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
 body{font-family:Arial;padding:15px;background:#f4f4f4}
 .card{background:white;padding:15px;border-radius:12px;margin-bottom:15px}
-input,select,textarea,button{width:100%;padding:12px;margin:8px 0;font-size:16px;box-sizing:border-box}
-button{background:#000;color:white;border:0;border-radius:10px}
-button:disabled{background:#888}
-#reader{width:100%;margin-top:10px}
-.status{background:#eef;padding:10px;border-radius:8px;white-space:pre-wrap}
-.required{color:red}
+input,select,textarea,button{width:100%;padding:12px;margin:8px 0;font-size:16px}
+button{background:black;color:white;border:0;border-radius:10px}
+#reader{width:100%}
+.status{background:#eef;padding:10px;border-radius:8px}
+.guide{background:#ffeaea;border-left:5px solid red;padding:12px;font-weight:bold}
 </style>
 </head>
 
 <body>
 
-<div class="card">
-<h2>Return Package Scanner</h2>
+<div class="card guide">
+RTS Guidelines
 
-<label>Driver Name <span class="required">*</span></label>
-<input id="driverName" placeholder="Enter driver name">
+DO NOT WAIT UNTIL THE END OF YOUR ROUTE!
 
-<label>Scanned TBA / Barcode <span class="required">*</span></label>
-<input id="tbaCode" placeholder="Scan or type TBA">
+If a delivery cannot be completed, contact Dispatch immediately.
 
-<button id="scanBtn">Start Camera Scan</button>
+Also:
+- Call and text the customer. If no response, contact Driver Support.
 
-<div id="reader"></div>
-<div id="status" class="status">Ready.</div>
+If still unable to deliver:
+- Contact Dispatch for final steps.
+
+Failure to follow these steps will negatively impact driver scores.
 </div>
 
 <div class="card">
-<label>Return Reason <span class="required">*</span></label>
-<select id="reason">
-<option value="">Select Reason</option>
-<option>Business Closed</option>
-<option>Customer Unavailable</option>
-<option>Access Problem</option>
-<option>Unable to Locate Address</option>
-<option>Damaged Package</option>
-<option>Package Not on Route</option>
-<option>Station Issue</option>
-<option>Other</option>
+<label>Driver Name</label>
+<input id="driverName">
+
+<label>TBA</label>
+<input id="tbaCode">
+
+<button onclick="startScanner()">Scan</button>
+<div id="reader"></div>
+
+<div id="status" class="status">Ready</div>
+</div>
+
+<div class="card">
+
+<label>Main Category</label>
+<select id="category" onchange="updateReasons()">
+<option value="">Select</option>
+<option>ACCESS ISSUE</option>
+<option>BUSINESS CLOSED</option>
+<option>CANCELLED</option>
+<option>CUSTOMER ISSUE</option>
+<option>EMPTY PACKAGE</option>
+<option>INCORRECT ADDRESS</option>
+<option>LOCKER ISSUES</option>
+<option>CUSTOMER RETURN</option>
+<option>MISSORTED PACKAGE</option>
+<option>OTP</option>
+<option>UNABLE TO PICKUP</option>
+<option>UNSAFE DELIVERY</option>
+<option>UNABLE TO FIND ADDRESS</option>
 </select>
 
-<label>Notes <span class="required">*</span></label>
-<textarea id="notes" placeholder="Required: explain the return"></textarea>
+<label>Sub-Reason</label>
+<select id="reason"></select>
 
-<label>Photo Proof <span class="required">*</span></label>
+<label>Notes</label>
+<textarea id="notes"></textarea>
+
+<label>Photo</label>
 <input id="photo" type="file" accept="image/*" capture="environment">
 
-<button id="submitBtn">Submit Return</button>
+<button onclick="submitForm()">Submit</button>
+
 </div>
 
 <iframe name="hiddenFrame" style="display:none;"></iframe>
 
 <form id="hiddenForm" method="POST" target="hiddenFrame"
-action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec"
-style="display:none;">
-  <textarea name="payload" id="payload"></textarea>
+action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec">
+<textarea name="payload" id="payload"></textarea>
 </form>
 
 <script>
+
 const statusBox = document.getElementById("status");
-const submitBtn = document.getElementById("submitBtn");
-let scanner = null;
-let scannerRunning = false;
 
-function show(msg){
-  statusBox.innerText = msg;
-}
+const reasonMap = {
+"CUSTOMER ISSUE":[
+"REQUESTED FUTURE DELIVERY DATE",
+"NO LONGER WANTS PACKAGE",
+"UNAVAILABLE"
+],
+"LOCKER ISSUES":[
+"PICKUP",
+"FULL",
+"NOT WORKING"
+],
+"OTP":[
+"CODE UNAVAILABLE",
+"CUSTOMER UNAVAILABLE"
+],
+"UNSAFE DELIVERY":[
+"DUE TO DOG",
+"DUE TO BAD WEATHER",
+"UNSAFE TO LEAVE PACKAGE",
+"ROAD CLOSED"
+]
+};
 
-async function stopScanner(){
-  try {
-    if (scanner && scannerRunning) {
-      await scanner.stop();
-      await scanner.clear();
-    }
-  } catch(e) {}
-  scanner = null;
-  scannerRunning = false;
-}
+function show(msg){statusBox.innerText=msg;}
 
-async function startScanner(){
-  try {
-    await stopScanner();
+function updateReasons(){
+const cat=document.getElementById("category").value;
+const r=document.getElementById("reason");
+r.innerHTML="<option value=''>Select</option>";
 
-    show("Opening camera...");
-    document.getElementById("reader").innerHTML = "";
-
-    scanner = new Html5Qrcode("reader");
-    scannerRunning = true;
-
-    await scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      async function(decodedText){
-        document.getElementById("tbaCode").value = decodedText;
-        show("Scanned: " + decodedText);
-        await stopScanner();
-      }
-    );
-
-  } catch(err) {
-    scannerRunning = false;
-    show("Camera error: " + err);
-  }
-}
-
-document.getElementById("scanBtn").addEventListener("click", startScanner);
-
-function compressImage(file) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const reader = new FileReader();
-
-    reader.onload = e => img.src = e.target.result;
-
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const maxWidth = 600;
-      const scale = Math.min(1, maxWidth / img.width);
-
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      resolve(canvas.toDataURL("image/jpeg", 0.4));
-    };
-
-    reader.onerror = reject;
-    img.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function validateForm(){
-  const driver = document.getElementById("driverName").value.trim();
-  const tba = document.getElementById("tbaCode").value.trim();
-  const reason = document.getElementById("reason").value;
-  const notes = document.getElementById("notes").value.trim();
-  const photoFile = document.getElementById("photo").files[0];
-
-  if (!driver) {
-    show("Driver name is required.");
-    return false;
-  }
-
-  if (!tba) {
-    show("TBA/barcode is required. Scan or type it.");
-    return false;
-  }
-
-  if (!reason) {
-    show("Return reason is required.");
-    return false;
-  }
-
-  if (!notes) {
-    show("Notes are required.");
-    return false;
-  }
-
-  if (!photoFile) {
-    show("Photo proof is required.");
-    return false;
-  }
-
-  return true;
-}
-
-document.getElementById("submitBtn").addEventListener("click", async function(){
-
-  if (!validateForm()) return;
-
-  const driver = document.getElementById("driverName").value.trim();
-  const tba = document.getElementById("tbaCode").value.trim();
-  const reason = document.getElementById("reason").value;
-  const notes = document.getElementById("notes").value.trim();
-  const photoFile = document.getElementById("photo").files[0];
-
-  try {
-    submitBtn.disabled = true;
-    show("Compressing photo...");
-
-    const photoBase64 = await compressImage(photoFile);
-
-    const data = {
-      driver,
-      tba,
-      reason,
-      notes,
-      photoName: tba + "_return.jpg",
-      photoBase64
-    };
-
-    document.getElementById("payload").value = JSON.stringify(data);
-
-    show("Submitting...");
-    document.getElementById("hiddenForm").submit();
-
-    setTimeout(async () => {
-
-      const another = confirm("Return submitted successfully.\n\nSubmit another package?");
-
-      if (another) {
-        document.getElementById("tbaCode").value = "";
-        document.getElementById("reason").value = "";
-        document.getElementById("notes").value = "";
-        document.getElementById("photo").value = "";
-
-        show("Ready for next package. Tap Start Camera Scan.");
-
-        setTimeout(() => {
-          startScanner();
-        }, 500);
-
-      } else {
-        show("All done. You can close the page.");
-      }
-
-      submitBtn.disabled = false;
-
-    }, 2500);
-
-  } catch(err) {
-    submitBtn.disabled = false;
-    show("Error: " + err);
-  }
+if(reasonMap[cat]){
+reasonMap[cat].forEach(x=>{
+let o=document.createElement("option");
+o.value=x;
+o.textContent=x;
+r.appendChild(o);
 });
+}
+}
+
+function startScanner(){
+const scanner=new Html5Qrcode("reader");
+
+scanner.start(
+{facingMode:"environment"},
+{fps:10,qrbox:250},
+(text)=>{
+document.getElementById("tbaCode").value=text;
+scanner.stop();
+show("Scanned "+text);
+}
+);
+}
+
+function compressImage(file){
+return new Promise(res=>{
+const r=new FileReader();
+r.onload=e=>{
+const img=new Image();
+img.onload=()=>{
+const c=document.createElement("canvas");
+const s=Math.min(1,600/img.width);
+c.width=img.width*s;
+c.height=img.height*s;
+c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+res(c.toDataURL("image/jpeg",0.4));
+};
+img.src=e.target.result;
+};
+r.readAsDataURL(file);
+});
+}
+
+async function submitForm(){
+
+const driver=driverName.value.trim();
+const tba=tbaCode.value.trim();
+const cat=category.value;
+const reason=reasonSelect.value;
+const notes=notesField.value.trim();
+const photoFile=photo.files[0];
+
+if(!driver||!tba||!cat||!notes||!photoFile){
+show("Fill all required fields");
+return;
+}
+
+const photoBase64=await compressImage(photoFile);
+
+const data={
+driver,
+tba,
+category:cat,
+reason,
+notes,
+photoName:tba+".jpg",
+photoBase64
+};
+
+payload.value=JSON.stringify(data);
+hiddenForm.submit();
+
+setTimeout(()=>{
+if(confirm("Submitted. Submit another?")){
+tbaCode.value="";
+notesField.value="";
+photo.value="";
+startScanner();
+}
+},2000);
+}
+
 </script>
 
 </body>
