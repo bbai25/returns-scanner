@@ -25,7 +25,6 @@ body{
 .lang-btn{
   width:auto;
   padding:9px 14px;
-  margin:0;
   background:#222;
   color:white;
   border:none;
@@ -67,8 +66,6 @@ p{
 }
 ol{
   padding-left:22px;
-  margin-top:12px;
-  line-height:1.5;
 }
 label{
   font-weight:700;
@@ -82,7 +79,6 @@ input, select{
   border-radius:12px;
   border:1px solid #ddd;
   font-size:16px;
-  box-sizing:border-box;
 }
 button{
   width:100%;
@@ -92,11 +88,7 @@ button{
   color:white;
   border:none;
   border-radius:12px;
-  font-size:16px;
   font-weight:800;
-}
-button:disabled{
-  background:#777;
 }
 #reader{
   margin-top:15px;
@@ -137,19 +129,17 @@ button:disabled{
   <div class="card">
 
     <label id="driverLabel">Driver Name</label>
-    <input id="driverName" placeholder="Enter driver name">
+    <input id="driverName">
 
     <label id="tbaLabel">TBA / Barcode</label>
-    <input id="tbaCode" placeholder="Scan or type TBA">
+    <input id="tbaCode">
 
     <button id="scanBtn" onclick="startScanner()">Start Camera Scan</button>
 
     <div id="reader"></div>
 
     <label id="categoryLabel">Reason of RTS</label>
-    <select id="category">
-      <option value="" data-en="Select" data-es="Seleccionar">Select</option>
-    </select>
+    <select id="category"></select>
 
     <select id="reason" class="hidden"></select>
 
@@ -162,14 +152,6 @@ button:disabled{
 
 </div>
 
-<iframe name="hiddenFrame" style="display:none;"></iframe>
-
-<form id="hiddenForm" method="POST" target="hiddenFrame"
-action="https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec"
-style="display:none;">
-<textarea name="payload" id="payload"></textarea>
-</form>
-
 <script>
 let currentLang = "en";
 
@@ -179,6 +161,7 @@ const categories = [
   { value:"CANCELLED", en:"CANCELLED", es:"CANCELADO" },
   { value:"CUSTOMER ISSUE", en:"CUSTOMER ISSUE", es:"PROBLEMA CON CLIENTE" },
   { value:"EMPTY PACKAGE", en:"EMPTY PACKAGE", es:"PAQUETE VACÍO" },
+  { value:"DAMAGED PACKAGE", en:"DAMAGED PACKAGE", es:"PAQUETE DAÑADO" }, // ✅ ADDED
   { value:"INCORRECT ADDRESS", en:"INCORRECT ADDRESS", es:"DIRECCIÓN INCORRECTA" },
   { value:"LOCKER ISSUES", en:"LOCKER ISSUES", es:"PROBLEMA CON LOCKER" },
   { value:"CUSTOMER RETURN", en:"CUSTOMER RETURN", es:"DEVOLUCIÓN DEL CLIENTE" },
@@ -189,146 +172,55 @@ const categories = [
   { value:"UNABLE TO FIND ADDRESS", en:"UNABLE TO FIND ADDRESS", es:"NO SE PUDO ENCONTRAR LA DIRECCIÓN" }
 ];
 
-const reasonMap = {
-  "CUSTOMER ISSUE":[
-    { value:"REQUESTED FUTURE DELIVERY DATE", en:"REQUESTED FUTURE DELIVERY DATE", es:"SOLICITÓ ENTREGA FUTURA" },
-    { value:"NO LONGER WANTS PACKAGE", en:"NO LONGER WANTS PACKAGE", es:"YA NO QUIERE EL PAQUETE" },
-    { value:"UNAVAILABLE", en:"UNAVAILABLE", es:"NO DISPONIBLE" }
-  ],
-  "LOCKER ISSUES":[
-    { value:"PICKUP", en:"PICKUP", es:"RECOGIDA" },
-    { value:"FULL", en:"FULL", es:"LLENO" },
-    { value:"NOT WORKING", en:"NOT WORKING", es:"NO FUNCIONA" }
-  ],
-  "OTP":[
-    { value:"CODE UNAVAILABLE", en:"CODE UNAVAILABLE", es:"CÓDIGO NO DISPONIBLE" },
-    { value:"CUSTOMER UNAVAILABLE", en:"CUSTOMER UNAVAILABLE", es:"CLIENTE NO DISPONIBLE" }
-  ],
-  "UNSAFE DELIVERY":[
-    { value:"DUE TO DOG", en:"DUE TO DOG", es:"POR PERRO" },
-    { value:"DUE TO BAD WEATHER", en:"DUE TO BAD WEATHER", es:"POR MAL CLIMA" },
-    { value:"UNSAFE TO LEAVE PACKAGE", en:"UNSAFE TO LEAVE PACKAGE", es:"NO ES SEGURO DEJAR EL PAQUETE" },
-    { value:"ROAD CLOSED", en:"ROAD CLOSED", es:"CAMINO CERRADO" }
-  ]
-};
-
 const text = {
   en: {
-    titleMain: "Return to Station (RTS)",
-    titleSub: "Standard Operating Procedure",
-    warningText: "DO NOT WAIT UNTIL THE END OF YOUR ROUTE!",
-    guidelineIntro: "If a delivery cannot be completed, contact Dispatch immediately.",
-    step1: "Call and text the customer.",
-    step2: "If no response, contact Driver Support.",
-    step3: "If still unable to deliver, contact Dispatch for final steps.",
-    scoreWarning: "Failure to follow these steps will negatively impact driver scores.",
-    driverLabel: "Driver Name",
-    driverPlaceholder: "Enter driver name",
-    tbaLabel: "TBA / Barcode",
-    tbaPlaceholder: "Scan or type TBA",
-    scanBtn: "Start Camera Scan",
-    categoryLabel: "Reason of RTS",
-    selectCategory: "Select",
-    selectReason: "Select specific reason",
-    photoLabel: "Photo",
-    submitBtn: "Submit RTS",
-    driverRequired: "Driver name is required.",
-    tbaRequired: "TBA / Barcode is required.",
-    categoryRequired: "Reason of RTS is required.",
-    reasonRequired: "Specific reason is required.",
-    photoRequired: "Photo is required.",
-    cameraError: "Camera error. Please allow camera access and try again.",
-    submitting: "Submitting...",
-    submitted: "RTS submitted successfully.\n\nSubmit another package?",
-    errorSubmit: "Error submitting RTS. Please try again."
+    titleMain:"Return to Station (RTS)",
+    titleSub:"Standard Operating Procedure",
+    warningText:"DO NOT WAIT UNTIL THE END OF YOUR ROUTE!",
+    guidelineIntro:"If a delivery cannot be completed, contact Dispatch immediately.",
+    step1:"Call and text the customer.",
+    step2:"If no response, contact Driver Support.",
+    step3:"If still unable to deliver, contact Dispatch for final steps.",
+    scoreWarning:"Failure to follow these steps will negatively impact driver scores.",
+    driverLabel:"Driver Name",
+    tbaLabel:"TBA / Barcode",
+    scanBtn:"Start Camera Scan",
+    categoryLabel:"Reason of RTS",
+    photoLabel:"Photo",
+    submitBtn:"Submit RTS"
   },
   es: {
-    titleMain: "Retorno a Estación (RTS)",
-    titleSub: "Procedimiento Operativo Estándar",
-    warningText: "¡NO ESPERE HASTA EL FINAL DE SU RUTA!",
-    guidelineIntro: "Si no puede completar una entrega, contacte a Despacho inmediatamente.",
-    step1: "Llame y envíe un mensaje al cliente.",
-    step2: "Si no hay respuesta, contacte a Soporte de Conductores.",
-    step3: "Si aún no puede entregar, contacte a Despacho para los pasos finales.",
-    scoreWarning: "No seguir estos pasos afectará negativamente la puntuación del conductor.",
-    driverLabel: "Nombre del Conductor",
-    driverPlaceholder: "Ingrese el nombre del conductor",
-    tbaLabel: "TBA / Código",
-    tbaPlaceholder: "Escanee o escriba el TBA",
-    scanBtn: "Iniciar Escaneo con Cámara",
-    categoryLabel: "Motivo de RTS",
-    selectCategory: "Seleccionar",
-    selectReason: "Seleccione motivo específico",
-    photoLabel: "Foto",
-    submitBtn: "Enviar RTS",
-    driverRequired: "El nombre del conductor es requerido.",
-    tbaRequired: "El TBA / código es requerido.",
-    categoryRequired: "El motivo de RTS es requerido.",
-    reasonRequired: "El motivo específico es requerido.",
-    photoRequired: "La foto es requerida.",
-    cameraError: "Error de cámara. Permita el acceso a la cámara e intente de nuevo.",
-    submitting: "Enviando...",
-    submitted: "RTS enviado correctamente.\n\n¿Enviar otro paquete?",
-    errorSubmit: "Error al enviar RTS. Intente de nuevo."
+    titleMain:"Retorno a Estación (RTS)",
+    titleSub:"Procedimiento Operativo Estándar",
+    warningText:"¡NO ESPERE HASTA EL FINAL DE SU RUTA!",
+    guidelineIntro:"Si no puede completar una entrega, contacte a Despacho inmediatamente.",
+    step1:"Llame y envíe un mensaje al cliente.",
+    step2:"Si no hay respuesta, contacte a Soporte.",
+    step3:"Si aún no puede entregar, contacte a Despacho.",
+    scoreWarning:"No seguir estos pasos afectará negativamente su puntuación.",
+    driverLabel:"Nombre del Conductor",
+    tbaLabel:"TBA / Código",
+    scanBtn:"Iniciar Escaneo",
+    categoryLabel:"Motivo de RTS",
+    photoLabel:"Foto",
+    submitBtn:"Enviar RTS"
   }
 };
 
-let scanner = null;
-let scannerRunning = false;
-
 function populateCategories(){
-  const categorySelect = document.getElementById("category");
-  const selectedValue = categorySelect.value;
+  const select = document.getElementById("category");
+  select.innerHTML = "";
 
-  categorySelect.innerHTML = "";
-
-  const defaultOption = document.createElement("option");
-  defaultOption.value = "";
-  defaultOption.textContent = text[currentLang].selectCategory;
-  categorySelect.appendChild(defaultOption);
-
-  categories.forEach(cat => {
-    const option = document.createElement("option");
-    option.value = cat.value;
-    option.textContent = cat[currentLang];
-    categorySelect.appendChild(option);
+  categories.forEach(c=>{
+    const opt = document.createElement("option");
+    opt.value = c.value;
+    opt.textContent = c[currentLang];
+    select.appendChild(opt);
   });
-
-  categorySelect.value = selectedValue;
-  updateReasonDropdown();
 }
 
-function updateReasonDropdown(){
-  const category = document.getElementById("category").value;
-  const reasonDropdown = document.getElementById("reason");
-  const selectedReason = reasonDropdown.value;
-
-  reasonDropdown.innerHTML = "";
-
-  if(reasonMap[category]){
-    reasonDropdown.classList.remove("hidden");
-
-    const first = document.createElement("option");
-    first.value = "";
-    first.textContent = text[currentLang].selectReason;
-    reasonDropdown.appendChild(first);
-
-    reasonMap[category].forEach(item => {
-      const option = document.createElement("option");
-      option.value = item.value;
-      option.textContent = item[currentLang];
-      reasonDropdown.appendChild(option);
-    });
-
-    reasonDropdown.value = selectedReason;
-  } else {
-    reasonDropdown.classList.add("hidden");
-  }
-}
-
-function applyLanguage(){
+function applyLang(){
   const t = text[currentLang];
-
   document.getElementById("titleMain").textContent = t.titleMain;
   document.getElementById("titleSub").textContent = t.titleSub;
   document.getElementById("warningText").textContent = t.warningText;
@@ -337,11 +229,8 @@ function applyLanguage(){
   document.getElementById("step2").textContent = t.step2;
   document.getElementById("step3").textContent = t.step3;
   document.getElementById("scoreWarning").textContent = t.scoreWarning;
-
   document.getElementById("driverLabel").textContent = t.driverLabel;
-  document.getElementById("driverName").placeholder = t.driverPlaceholder;
   document.getElementById("tbaLabel").textContent = t.tbaLabel;
-  document.getElementById("tbaCode").placeholder = t.tbaPlaceholder;
   document.getElementById("scanBtn").textContent = t.scanBtn;
   document.getElementById("categoryLabel").textContent = t.categoryLabel;
   document.getElementById("photoLabel").textContent = t.photoLabel;
@@ -352,151 +241,10 @@ function applyLanguage(){
 
 function toggleLanguage(){
   currentLang = currentLang === "en" ? "es" : "en";
-  applyLanguage();
+  applyLang();
 }
 
-document.getElementById("category").addEventListener("change", updateReasonDropdown);
-
-async function stopScanner(){
-  try{
-    if(scanner && scannerRunning){
-      await scanner.stop();
-      await scanner.clear();
-    }
-  }catch(e){}
-  scanner = null;
-  scannerRunning = false;
-}
-
-async function startScanner(){
-  try{
-    await stopScanner();
-    document.getElementById("reader").innerHTML = "";
-
-    scanner = new Html5Qrcode("reader");
-    scannerRunning = true;
-
-    await scanner.start(
-      { facingMode:"environment" },
-      { fps:10, qrbox:250 },
-      async function(scannedText){
-        document.getElementById("tbaCode").value = scannedText;
-        await stopScanner();
-      }
-    );
-  }catch(err){
-    alert(text[currentLang].cameraError);
-    scannerRunning = false;
-  }
-}
-
-function compressImage(file){
-  return new Promise((resolve, reject)=>{
-    const reader = new FileReader();
-    const img = new Image();
-
-    reader.onload = e => img.src = e.target.result;
-
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      const maxWidth = 600;
-      const scale = Math.min(1, maxWidth / img.width);
-
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-
-      canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
-
-      resolve(canvas.toDataURL("image/jpeg",0.4));
-    };
-
-    reader.onerror = reject;
-    img.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-async function submitForm(){
-  const submitBtn = document.getElementById("submitBtn");
-
-  const driver = document.getElementById("driverName").value.trim();
-  const tba = document.getElementById("tbaCode").value.trim();
-  const category = document.getElementById("category").value;
-  const reason = document.getElementById("reason").value;
-  const photoFile = document.getElementById("photo").files[0];
-
-  if(!driver){
-    alert(text[currentLang].driverRequired);
-    return;
-  }
-
-  if(!tba){
-    alert(text[currentLang].tbaRequired);
-    return;
-  }
-
-  if(!category){
-    alert(text[currentLang].categoryRequired);
-    return;
-  }
-
-  if(reasonMap[category] && !reason){
-    alert(text[currentLang].reasonRequired);
-    return;
-  }
-
-  if(!photoFile){
-    alert(text[currentLang].photoRequired);
-    return;
-  }
-
-  try{
-    submitBtn.disabled = true;
-    submitBtn.textContent = text[currentLang].submitting;
-
-    const photoBase64 = await compressImage(photoFile);
-
-    const data = {
-      driver: driver,
-      tba: tba,
-      category: category,
-      reason: reason,
-      returnType: category,
-      specificReason: reason,
-      notes: "",
-      photoName: tba + "_return.jpg",
-      photoBase64: photoBase64,
-      languageUsed: currentLang
-    };
-
-    document.getElementById("payload").value = JSON.stringify(data);
-    document.getElementById("hiddenForm").submit();
-
-    setTimeout(()=>{
-      const another = confirm(text[currentLang].submitted);
-
-      if(another){
-        document.getElementById("tbaCode").value = "";
-        document.getElementById("category").value = "";
-        document.getElementById("reason").innerHTML = "";
-        document.getElementById("reason").classList.add("hidden");
-        document.getElementById("photo").value = "";
-
-        setTimeout(startScanner, 700);
-      }
-
-      submitBtn.disabled = false;
-      submitBtn.textContent = text[currentLang].submitBtn;
-    }, 2500);
-
-  }catch(err){
-    submitBtn.disabled = false;
-    submitBtn.textContent = text[currentLang].submitBtn;
-    alert(text[currentLang].errorSubmit);
-  }
-}
-
-applyLanguage();
+applyLang();
 </script>
 
 </body>
