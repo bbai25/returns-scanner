@@ -24,7 +24,7 @@ function doPost(e) {
       : null;
     const sheet = getOrCreateSheet_();
 
-    sheet.appendRow([
+    const rowData = [
       new Date(),
       payload.driverName,
       payload.tbaCode,
@@ -34,7 +34,9 @@ function doPost(e) {
       businessClosedProofPhoto ? businessClosedProofPhoto.url : '',
       payload.userAgent || '',
       payload.dispatcherNotes || '',
-    ]);
+    ];
+    sheet.insertRowBefore(2);
+    sheet.getRange(2, 1, 1, rowData.length).setValues([rowData]);
 
     return json_({ ok: true, photoLink: photo.url });
   } catch (error) {
