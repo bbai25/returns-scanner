@@ -1,0 +1,267 @@
+:root {
+  color-scheme: light;
+  --bg: #eef2f6;
+  --card: #ffffff;
+  --ink: #172033;
+  --muted: #5d6678;
+  --line: #d9e0ea;
+  --primary: #176b87;
+  --primary-strong: #10526a;
+  --accent: #e4a11b;
+  --success: #176f4d;
+  --focus: rgba(23, 107, 135, 0.22);
+  --shadow: 0 16px 36px rgba(27, 42, 65, 0.1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.45;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.app-shell {
+  width: min(100%, 760px);
+  margin: 0 auto;
+  padding: 24px 16px 40px;
+}
+
+.page-header {
+  position: relative;
+  padding: 16px 56px 10px;
+  text-align: center;
+}
+
+.page-header h1 {
+  margin: 4px 0 0;
+  font-size: clamp(1.8rem, 8vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.language-toggle {
+  position: absolute;
+  top: 8px;
+  right: 0;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--primary);
+  font-weight: 700;
+  padding: 0 12px;
+}
+
+.guidelines-card,
+.rts-form {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+.guidelines-card {
+  margin-top: 14px;
+  padding: 22px;
+}
+
+.guidelines-card h2 {
+  margin: 0 0 14px;
+  color: #7a4b00;
+  font-size: 1.12rem;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.guidelines-card p {
+  margin: 0 0 14px;
+  color: var(--muted);
+}
+
+.guidelines-card ol {
+  margin: 0 0 16px;
+  padding-left: 24px;
+}
+
+.guidelines-card li + li {
+  margin-top: 8px;
+}
+
+.guidelines-card .impact {
+  margin-bottom: 0;
+  color: #344054;
+  font-weight: 700;
+  text-align: center;
+}
+
+.rts-form {
+  display: grid;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 20px;
+}
+
+.field-group {
+  display: grid;
+  gap: 8px;
+}
+
+label {
+  color: #263247;
+  font-weight: 700;
+}
+
+input,
+select {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+  padding: 12px 14px;
+}
+
+input:focus,
+select:focus,
+button:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.scan-row {
+  display: grid;
+  gap: 10px;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 50px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 12px 16px;
+}
+
+.primary-button {
+  background: var(--primary);
+  color: #fff;
+}
+
+.primary-button:hover {
+  background: var(--primary-strong);
+}
+
+.primary-button:disabled {
+  background: #8ca6b1;
+  cursor: wait;
+}
+
+.secondary-button {
+  border: 1px solid #bfd0dc;
+  background: #f7fbfd;
+  color: var(--primary);
+}
+
+.scanner-panel {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #0f172a;
+}
+
+#reader {
+  width: 100%;
+  min-height: 280px;
+}
+
+.field-message,
+.field-hint,
+.form-message {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.field-message.is-error,
+.form-message.is-error {
+  color: #8a4b00;
+  font-weight: 700;
+}
+
+.form-message.is-success {
+  color: var(--success);
+  font-weight: 700;
+}
+
+.success-dialog {
+  width: min(calc(100% - 32px), 420px);
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  padding: 0;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+}
+
+.success-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.success-dialog form {
+  display: grid;
+  gap: 12px;
+  padding: 22px;
+}
+
+.success-dialog h2,
+.success-dialog p {
+  margin: 0;
+  text-align: center;
+}
+
+.dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (min-width: 620px) {
+  .app-shell {
+    padding-top: 38px;
+  }
+
+  .scan-row {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+
+  .secondary-button {
+    white-space: nowrap;
+  }
+}
