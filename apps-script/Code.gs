@@ -1,4 +1,4 @@
-const SHEET_NAME = 'RTS Submissions';
+const SHEET_NAME = 'Returns';
 const PHOTO_FOLDER_NAME = 'Return Package Photos';
 const HEADERS = [
   'Timestamp',
