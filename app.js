@@ -67,17 +67,8 @@ const translations = {
     required: "Please complete all required fields.",
     back: "Back",
     confirmSubmit: "Confirm & Submit",
-    contactPromptTitle: "Before submitting, confirm the contact step completed.",
-    contactOptionCustomer: "Called customer for at least 15 seconds or reached voicemail, then sent text message",
-    contactOptionSupport: "Contacted Driver Support because customer could not be reached, phone was disconnected, no number was available, or it was unsafe to contact the customer",
-    contactRequired: "Please select the contact step completed before submitting.",
-    businessClosedPromptTitle: "Before submitting, confirm Business Closed steps completed.",
-    businessClosedOptionNotes: "Checked delivery notes/instructions and attempted customer contact",
-    businessClosedOptionDispatch: "Contacted Dispatch for final steps",
-    businessClosedRequired: "Please confirm Business Closed steps before submitting.",
-    dispatchPromptTitle: "Before submitting, confirm Dispatch was notified.",
-    dispatchOption: "Contacted Dispatch for final steps",
-    dispatchRequired: "Please confirm Dispatch was contacted before submitting.",
+    checklistPromptTitle: "Before submitting, complete RTS procedure steps.",
+    checklistRequired: "Please complete all required RTS procedure steps before submitting.",
   },
   es: {
     sop: "Procedimiento Operativo Estándar",
@@ -114,81 +105,113 @@ const translations = {
     required: "Complete todos los campos requeridos.",
     back: "Atrás",
     confirmSubmit: "Confirmar y Enviar",
-    contactPromptTitle: "Antes de enviar, confirme el paso de contacto completado.",
-    contactOptionCustomer: "Llamé al cliente por al menos 15 segundos o llegó al buzón de voz, luego envié mensaje de texto",
-    contactOptionSupport: "Contacté a Soporte de Conductores porque no se pudo contactar al cliente, el teléfono estaba desconectado, no había número disponible, o no era seguro contactar al cliente",
-    contactRequired: "Seleccione el paso de contacto completado antes de enviar.",
-    businessClosedPromptTitle: "Antes de enviar, confirme que completó los pasos de negocio cerrado.",
-    businessClosedOptionNotes: "Revisé las notas/instrucciones de entrega e intenté contactar al cliente",
-    businessClosedOptionDispatch: "Contacté a Despacho para los pasos finales",
-    businessClosedRequired: "Confirme los pasos de negocio cerrado antes de enviar.",
-    dispatchPromptTitle: "Antes de enviar, confirme que Despacho fue notificado.",
-    dispatchOption: "Contacté a Despacho para los pasos finales",
-    dispatchRequired: "Confirme que contactó a Despacho antes de enviar.",
+    checklistPromptTitle: "Antes de enviar, complete los pasos del procedimiento RTS.",
+    checklistRequired: "Please complete all required RTS procedure steps before submitting.",
   },
 };
 
-const verificationTypes = {
-  contact: {
-    titleKey: "contactPromptTitle",
-    requiredKey: "contactRequired",
-    inputType: "radio",
-    options: [
-      {
-        id: "contact-customer",
-        labelKey: "contactOptionCustomer",
-        value: "Customer call/text completed",
-      },
-      {
-        id: "contact-support",
-        labelKey: "contactOptionSupport",
-        value: "Driver Support contacted",
-      },
-    ],
-  },
-  businessClosed: {
-    titleKey: "businessClosedPromptTitle",
-    requiredKey: "businessClosedRequired",
-    inputType: "checkbox",
-    completionValue: "Business Closed steps completed",
-    options: [
-      {
-        id: "business-notes",
-        labelKey: "businessClosedOptionNotes",
-        value: "Checked delivery notes/instructions and attempted customer contact",
-      },
-      {
-        id: "business-dispatch",
-        labelKey: "businessClosedOptionDispatch",
-        value: "Contacted Dispatch for final steps",
-      },
-    ],
-  },
-  dispatch: {
-    titleKey: "dispatchPromptTitle",
-    requiredKey: "dispatchRequired",
-    inputType: "checkbox",
-    completionValue: "Dispatch contacted",
-    options: [
-      {
-        id: "dispatch-contacted",
-        labelKey: "dispatchOption",
-        value: "Contacted Dispatch for final steps",
-      },
-    ],
-  },
+const checklistLabels = {
+  "Called customer": "Llamé al cliente",
+  "Sent text message": "Envié mensaje de texto",
+  "Contacted Driver Support if access issue was not resolved": "Contacté a Driver Support si el problema de acceso no se resolvió",
+  "Contacted Dispatch for final steps": "Contacté a Dispatch para los pasos finales",
+  "Reviewed delivery notes/instructions": "Revisé las notas/instrucciones de entrega",
+  "Attempted customer contact": "Intenté contactar al cliente",
+  "Contacted Driver Support if customer could not be reached": "Contacté a Driver Support si no se pudo contactar al cliente",
+  "Contacted Driver Support": "Contacté a Driver Support",
+  "Notified Dispatch": "Notifiqué a Dispatch",
+  "Called customer if safe to do so": "Llamé al cliente si era seguro hacerlo",
+  "Sent text message or attempted second call": "Envié mensaje de texto o intenté una segunda llamada",
+  "Contacted Driver Support if needed": "Contacté a Driver Support si era necesario",
+  "Checked for safe location": "Busqué una ubicación segura",
+  "Marked package damaged in Amazon app": "Marqué el paquete como dañado en la app de Amazon",
+  "Returned package to station": "Devolví el paquete a la estación",
+  "Contacted Dispatch if needed": "Contacté a Dispatch si era necesario",
 };
 
-const contactComplianceReasons = new Set([
-  "ACCESS ISSUE",
-  "CUSTOMER ISSUE - UNAVAILABLE",
-  "INCORRECT ADDRESS",
-  "UNABLE TO FIND ADDRESS",
-  "UNSAFE DELIVERY - DUE TO DOG",
-  "UNSAFE DELIVERY - DUE TO BAD WEATHER",
-  "UNSAFE DELIVERY - UNSAFE TO LEAVE PACKAGE",
-  "UNSAFE DELIVERY - ROAD CLOSED",
-]);
+const defaultChecklist = ["Contacted Dispatch for final steps"];
+
+const procedureChecklists = {
+  "ACCESS ISSUE": [
+    "Called customer",
+    "Sent text message",
+    "Contacted Driver Support if access issue was not resolved",
+    "Contacted Dispatch for final steps",
+  ],
+  "BUSINESS CLOSED": [
+    "Reviewed delivery notes/instructions",
+    "Attempted customer contact",
+    "Contacted Dispatch for final steps",
+  ],
+  "CUSTOMER ISSUE - UNAVAILABLE": [
+    "Called customer",
+    "Sent text message",
+    "Contacted Driver Support if customer could not be reached",
+    "Contacted Dispatch for final steps",
+  ],
+  "INCORRECT ADDRESS": [
+    "Called customer",
+    "Sent text message",
+    "Contacted Driver Support",
+    "Contacted Dispatch for final steps",
+  ],
+  "UNABLE TO FIND ADDRESS": [
+    "Called customer",
+    "Sent text message",
+    "Contacted Driver Support",
+    "Contacted Dispatch for final steps",
+  ],
+  "LOCKER ISSUES - FULL": [
+    "Contacted Driver Support",
+    "Notified Dispatch",
+  ],
+  "LOCKER ISSUES - PICKUP": [
+    "Contacted Driver Support",
+    "Notified Dispatch",
+  ],
+  "LOCKER ISSUES - NOT WORKING": [
+    "Contacted Driver Support",
+    "Notified Dispatch",
+  ],
+  "UNSAFE DELIVERY - DUE TO DOG": [
+    "Called customer if safe to do so",
+    "Sent text message or attempted second call",
+    "Contacted Driver Support if needed",
+    "Contacted Dispatch for final steps",
+  ],
+  "UNSAFE DELIVERY - DUE TO BAD WEATHER": [
+    "Called customer",
+    "Sent text message",
+    "Contacted Driver Support if needed",
+    "Contacted Dispatch for final steps",
+  ],
+  "UNSAFE DELIVERY - UNSAFE TO LEAVE PACKAGE": [
+    "Checked for safe location",
+    "Called customer",
+    "Sent text message",
+    "Contacted Dispatch for final steps",
+  ],
+  "UNSAFE DELIVERY - ROAD CLOSED": [
+    "Contacted Dispatch for final steps",
+  ],
+  "DAMAGED PACKAGE": [
+    "Marked package damaged in Amazon app",
+    "Returned package to station",
+    "Contacted Dispatch if needed",
+  ],
+  "OTP - CODE UNAVAILABLE": [
+    "Called customer",
+    "Sent text message",
+    "Contacted Driver Support",
+    "Contacted Dispatch for final steps",
+  ],
+  "OTP - CUSTOMER UNAVAILABLE": [
+    "Called customer",
+    "Sent text message",
+    "Contacted Driver Support",
+    "Contacted Dispatch for final steps",
+  ],
+};
 
 let currentLanguage = "en";
 let scanner;
@@ -196,7 +219,7 @@ let isScanning = false;
 let scanMessageKey = "";
 let scanMessageIsError = false;
 let pendingPayload = null;
-let currentVerificationType = "";
+let currentVerificationReason = "";
 let isSubmitting = false;
 
 const form = document.querySelector("#rtsForm");
@@ -277,8 +300,8 @@ function applyTranslations() {
   if (photoInput.files.length) {
     photoName.textContent = `${t("photoSelected")} ${photoInput.files[0].name}`;
   }
-  if (verificationDialog.open && currentVerificationType) {
-    renderVerificationModal(currentVerificationType);
+  if (verificationDialog.open && currentVerificationReason) {
+    renderVerificationModal(currentVerificationReason);
   }
 }
 
@@ -428,39 +451,39 @@ function getReturnReason() {
   return reason;
 }
 
-function getVerificationType(returnReason) {
-  if (reasonSelect.value === "BUSINESS CLOSED") {
-    return "businessClosed";
-  }
-
-  if (contactComplianceReasons.has(returnReason)) {
-    return "contact";
-  }
-
-  return "dispatch";
+function getChecklist(returnReason) {
+  return procedureChecklists[returnReason] || defaultChecklist;
 }
 
-function renderVerificationModal(type) {
-  currentVerificationType = type;
-  const config = verificationTypes[type];
-  verificationTitle.textContent = t(config.titleKey);
+function translateChecklistItem(value) {
+  return currentLanguage === "es" ? checklistLabels[value] || value : value;
+}
+
+function getChecklistInputId(value, index) {
+  return `procedure-step-${index}-${value.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+}
+
+function renderVerificationModal(returnReason) {
+  currentVerificationReason = returnReason;
+  const checklist = getChecklist(returnReason);
+  verificationTitle.textContent = t("checklistPromptTitle");
   verificationMessage.textContent = "";
   verificationMessage.className = "form-message";
   verificationOptions.innerHTML = "";
 
-  config.options.forEach((option, index) => {
+  checklist.forEach((value, index) => {
     const label = document.createElement("label");
     label.className = "verification-option";
-    label.htmlFor = option.id;
+    label.htmlFor = getChecklistInputId(value, index);
 
     const input = document.createElement("input");
-    input.type = config.inputType;
-    input.id = option.id;
+    input.type = "checkbox";
+    input.id = getChecklistInputId(value, index);
     input.name = "verificationStep";
-    input.value = option.value;
+    input.value = value;
 
     const text = document.createElement("span");
-    text.textContent = t(option.labelKey);
+    text.textContent = translateChecklistItem(value);
 
     label.append(input, text);
     verificationOptions.append(label);
@@ -468,23 +491,19 @@ function renderVerificationModal(type) {
 }
 
 function getContactStepCompleted() {
-  const config = verificationTypes[currentVerificationType];
+  const checklist = getChecklist(currentVerificationReason);
   const checked = Array.from(verificationOptions.querySelectorAll("input:checked"));
 
-  if (currentVerificationType === "contact") {
-    return checked[0]?.value || "";
-  }
-
-  if (checked.length !== config.options.length) {
+  if (checked.length !== checklist.length) {
     return "";
   }
 
-  return config.completionValue;
+  return checked.map((input) => input.value).join("; ");
 }
 
 function showVerificationModal(payload) {
   pendingPayload = payload;
-  renderVerificationModal(getVerificationType(payload.returnReason));
+  renderVerificationModal(payload.returnReason);
   verificationDialog.showModal();
 }
 
@@ -629,7 +648,7 @@ verificationForm.addEventListener("submit", async (event) => {
 
   const contactStepCompleted = getContactStepCompleted();
   if (!contactStepCompleted) {
-    verificationMessage.textContent = t(verificationTypes[currentVerificationType].requiredKey);
+    verificationMessage.textContent = t("checklistRequired");
     verificationMessage.className = "form-message is-error";
     return;
   }
