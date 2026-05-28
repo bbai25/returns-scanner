@@ -52,3 +52,20 @@ After a successful submission, the app asks whether the driver wants to submit a
 ## Local Preview
 
 Open `index.html` in a browser to preview the page. Camera scanning works best from a deployed HTTPS page such as GitHub Pages.
+
+## Apps Script Deployment
+
+This repo is connected to the existing Apps Script project with `.clasp.json`. After installing and logging in to clasp, backend changes can be deployed from the repo root with:
+
+```bash
+clasp push
+```
+
+First-time setup:
+
+```bash
+npm install -g @google/clasp
+clasp login
+```
+
+Do not commit local Google credential files such as `.clasprc.json`.
