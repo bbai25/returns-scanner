@@ -53,6 +53,7 @@ const translations = {
     photoHint: "Take or upload a clear package photo.",
     submit: "Submit RTS",
     submitting: "Submitting...",
+    submittingRts: "Submitting RTS...",
     successTitle: "RTS submitted successfully.",
     submitAnother: "Submit another package?",
     yes: "Yes",
@@ -99,6 +100,7 @@ const translations = {
     photoHint: "Tome o suba una foto clara del paquete.",
     submit: "Enviar RTS",
     submitting: "Enviando...",
+    submittingRts: "Enviando RTS...",
     successTitle: "RTS enviado correctamente.",
     submitAnother: "¿Enviar otro paquete?",
     yes: "Sí",
@@ -195,6 +197,7 @@ let scanMessageKey = "";
 let scanMessageIsError = false;
 let pendingPayload = null;
 let currentVerificationType = "";
+let isSubmitting = false;
 
 const form = document.querySelector("#rtsForm");
 const languageToggle = document.querySelector("#languageToggle");
@@ -214,6 +217,7 @@ const verificationForm = document.querySelector("#verificationForm");
 const verificationTitle = document.querySelector("#verificationTitle");
 const verificationOptions = document.querySelector("#verificationOptions");
 const verificationMessage = document.querySelector("#verificationMessage");
+const confirmSubmitButton = verificationDialog.querySelector('[value="confirm"]');
 
 function t(key) {
   return translations[currentLanguage][key] || translations.en[key] || key;
@@ -379,18 +383,37 @@ async function startScanner() {
   }
 }
 
+function getCompressedPhotoName(fileName) {
+  const baseName = fileName.replace(/\.[^/.]+$/, "") || "return-photo";
+  return `${baseName}.jpg`;
+}
+
 function fileToPayload(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    const image = new Image();
+
     reader.onload = () => {
-      const result = String(reader.result);
+      image.src = String(reader.result);
+    };
+
+    image.onload = () => {
+      const scale = Math.min(1, 400 / image.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(image.width * scale);
+      canvas.height = Math.round(image.height * scale);
+      canvas.getContext("2d").drawImage(image, 0, 0, canvas.width, canvas.height);
+      const result = canvas.toDataURL("image/jpeg", 0.25);
+
       resolve({
-        name: file.name,
-        type: file.type || "application/octet-stream",
+        name: getCompressedPhotoName(file.name),
+        type: "image/jpeg",
         data: result.split(",")[1],
       });
     };
+
     reader.onerror = reject;
+    image.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
@@ -465,15 +488,31 @@ function showVerificationModal(payload) {
 }
 
 async function sendPayload(payload) {
+  if (isSubmitting) {
+    return;
+  }
+
+  isSubmitting = true;
   submitButton.disabled = true;
-  submitButton.textContent = t("submitting");
+  submitButton.textContent = t("submittingRts");
+  confirmSubmitButton.disabled = true;
+  confirmSubmitButton.textContent = t("submittingRts");
+  verificationMessage.textContent = t("submittingRts");
+  verificationMessage.className = "form-message";
 
   try {
+    const compressedPhoto = await fileToPayload(payload.photoFile);
+    const uploadPayload = {
+      ...payload,
+      photo: compressedPhoto,
+    };
+    delete uploadPayload.photoFile;
+
     const response = await fetch(CONFIG.appsScriptUrl, {
       method: "POST",
       mode: "cors",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(uploadPayload),
     });
     const result = await response.json();
 
@@ -486,8 +525,11 @@ async function sendPayload(payload) {
   } catch (error) {
     setFormMessage(t("submitError"), "error");
   } finally {
+    isSubmitting = false;
     submitButton.disabled = false;
     submitButton.textContent = t("submit");
+    confirmSubmitButton.disabled = false;
+    confirmSubmitButton.textContent = t("confirmSubmit");
     pendingPayload = null;
   }
 }
@@ -507,22 +549,17 @@ async function submitRts(event) {
     return;
   }
 
-  try {
-    const photo = await fileToPayload(photoInput.files[0]);
-    const payload = {
-      driverName: document.querySelector("#driverName").value.trim(),
-      tbaCode: normalizeTba(tbaInput.value),
-      returnReason: getReturnReason(),
-      contactStepCompleted: "",
-      userAgent: navigator.userAgent,
-      dispatcherNotes: "",
-      photo,
-    };
+  const payload = {
+    driverName: document.querySelector("#driverName").value.trim(),
+    tbaCode: normalizeTba(tbaInput.value),
+    returnReason: getReturnReason(),
+    contactStepCompleted: "",
+    userAgent: navigator.userAgent,
+    dispatcherNotes: "",
+    photoFile: photoInput.files[0],
+  };
 
-    showVerificationModal(payload);
-  } catch (error) {
-    setFormMessage(t("submitError"), "error");
-  }
+  showVerificationModal(payload);
 }
 
 async function resetForAnotherPackage() {
@@ -567,6 +604,10 @@ form.addEventListener("submit", submitRts);
 
 verificationForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+
+  if (isSubmitting) {
+    return;
+  }
 
   const action = event.submitter?.value;
   if (action === "back") {
