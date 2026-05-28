@@ -51,7 +51,6 @@ const translations = {
     selectSubReason: "Select sub-reason",
     photo: "Photo Upload",
     photoHint: "Take or upload a clear package photo.",
-    businessClosedPhotoHint: "For business closed, the photo must show proof of closure, such as posted business hours, closure notice, storefront/signage, or new business hours.",
     submit: "Submit RTS",
     submitting: "Submitting...",
     submittingRts: "Submitting RTS...",
@@ -93,7 +92,6 @@ const translations = {
     selectSubReason: "Seleccione sub-razón",
     photo: "Subir foto",
     photoHint: "Tome o suba una foto clara del paquete.",
-    businessClosedPhotoHint: "Para negocios cerrados, la foto debe mostrar prueba del cierre, como horario publicado, aviso de cierre, letrero de la tienda, o nuevo horario.",
     submit: "Enviar RTS",
     submitting: "Enviando...",
     submittingRts: "Enviando RTS...",
@@ -125,7 +123,7 @@ const checklistLabels = {
   "Contacted Dispatch for final steps": "Contacté a Dispatch para los pasos finales",
   "Reviewed delivery notes/instructions": "Revisé las notas/instrucciones de entrega",
   "Attempted customer contact": "Intenté contactar al cliente",
-  "Took photo showing business hours, closure notice, or posted signage": "Tomé una foto que muestra el horario del negocio, aviso de cierre, o señalización publicada",
+  "Took photo showing business hours, closure notice, storefront/signage, or changed hours": "Tomé una foto que muestra el horario del negocio, aviso de cierre, letrero de la tienda, o cambio de horario",
   "Contacted Driver Support if customer could not be reached": "Contacté a Driver Support si no se pudo contactar al cliente",
   "Contacted Driver Support": "Contacté a Driver Support",
   "Notified Dispatch": "Notifiqué a Dispatch",
@@ -150,7 +148,7 @@ const procedureChecklists = {
   "BUSINESS CLOSED": [
     "Reviewed delivery notes/instructions",
     "Attempted customer contact",
-    "Took photo showing business hours, closure notice, or posted signage",
+    "Took photo showing business hours, closure notice, storefront/signage, or changed hours",
     "Contacted Dispatch for final steps",
   ],
   "CUSTOMER ISSUE - UNAVAILABLE": [
@@ -354,9 +352,7 @@ function updatePhotoHint() {
     return;
   }
 
-  photoName.textContent = reasonSelect.value === "BUSINESS CLOSED"
-    ? t("businessClosedPhotoHint")
-    : t("photoHint");
+  photoName.textContent = t("photoHint");
 }
 
 function setScanMessage(message, isError = false, key = "") {
