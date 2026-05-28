@@ -26,7 +26,7 @@ function doPost(e) {
       payload.tbaCode,
       payload.returnReason,
       payload.contactStepCompleted,
-      `${photo.name} / ${photo.url}`,
+      photo.url,
       payload.userAgent || '',
       payload.dispatcherNotes || '',
     ]);
