@@ -41,7 +41,8 @@ The Google Sheet stores reporting values in English:
 - TBA Code
 - Return Reason
 - Contact Step Completed
-- Photo Name / Photo Link
+- Photo Link
+- Business Closed Proof Photo Link
 - User Agent
 - Dispatcher Notes
 

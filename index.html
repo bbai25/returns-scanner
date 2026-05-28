@@ -87,6 +87,12 @@
       <form method="dialog" id="verificationForm">
         <h2 id="verificationTitle">Before submitting, confirm Dispatch was notified.</h2>
         <div class="verification-options" id="verificationOptions"></div>
+        <div class="business-proof-group" id="businessProofGroup" hidden>
+          <label for="businessProofPhoto" data-i18n="businessProofPhoto">Take Business Closed Proof Photo</label>
+          <input id="businessProofPhoto" name="businessProofPhoto" type="file" accept="image/*" capture="environment">
+          <p class="field-hint" data-i18n="businessProofPhotoHint">Photo should show business hours, closure notice, storefront/signage, or changed hours.</p>
+          <p class="field-hint" id="businessProofPhotoName"></p>
+        </div>
         <p class="form-message" id="verificationMessage" role="status" aria-live="polite"></p>
         <div class="dialog-actions">
           <button class="secondary-button" value="back" type="submit" data-i18n="back">Back</button>

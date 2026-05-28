@@ -259,6 +259,15 @@ button:focus {
   margin-top: 4px;
 }
 
+.business-proof-group {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+  padding: 12px;
+}
+
 .verification-option {
   display: grid;
   grid-template-columns: 24px 1fr;

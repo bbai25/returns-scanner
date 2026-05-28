@@ -6,7 +6,8 @@ const HEADERS = [
   'TBA Code',
   'Return Reason',
   'Contact Step Completed',
-  'Photo Name / Photo Link',
+  'Photo Link',
+  'Business Closed Proof Photo Link',
   'User Agent',
   'Dispatcher Notes',
 ];
@@ -18,6 +19,9 @@ function doPost(e) {
 
     const folder = getOrCreateFolder_(PHOTO_FOLDER_NAME);
     const photo = savePhoto_(folder, payload.photo, payload.tbaCode);
+    const businessClosedProofPhoto = payload.businessClosedProofPhoto
+      ? savePhoto_(folder, payload.businessClosedProofPhoto, payload.tbaCode, '-business-closed-proof')
+      : null;
     const sheet = getOrCreateSheet_();
 
     sheet.appendRow([
@@ -27,6 +31,7 @@ function doPost(e) {
       payload.returnReason,
       payload.contactStepCompleted,
       photo.url,
+      businessClosedProofPhoto ? businessClosedProofPhoto.url : '',
       payload.userAgent || '',
       payload.dispatcherNotes || '',
     ]);
@@ -48,14 +53,17 @@ function validatePayload(payload) {
   if (!payload.returnReason) throw new Error('Return Reason is required');
   if (!payload.contactStepCompleted) throw new Error('Contact Step Completed is required');
   if (!payload.photo || !payload.photo.data || !payload.photo.name) throw new Error('Photo is required');
+  if (payload.returnReason === 'BUSINESS CLOSED' && (!payload.businessClosedProofPhoto || !payload.businessClosedProofPhoto.data || !payload.businessClosedProofPhoto.name)) {
+    throw new Error('Business Closed Proof Photo is required');
+  }
 }
 
-function savePhoto_(folder, photo, tbaCode) {
+function savePhoto_(folder, photo, tbaCode, suffix) {
   const bytes = Utilities.base64Decode(photo.data);
   const cleanTba = String(tbaCode).replace(/[^A-Z0-9_-]/g, '');
   const timestamp = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyyMMdd-HHmmss');
   const extension = getExtension_(photo.name, photo.type);
-  const fileName = `${cleanTba}-${timestamp}.${extension}`;
+  const fileName = `${cleanTba}${suffix || ''}-${timestamp}.${extension}`;
   const blob = Utilities.newBlob(bytes, photo.type || 'image/jpeg', fileName);
   const file = folder.createFile(blob);
 
