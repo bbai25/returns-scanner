@@ -51,6 +51,7 @@ const translations = {
     selectSubReason: "Select sub-reason",
     photo: "Photo Upload",
     photoHint: "Take or upload a clear package photo.",
+    businessClosedPhotoHint: "For business closed, the photo must show proof of closure, such as posted business hours, closure notice, storefront/signage, or new business hours.",
     submit: "Submit RTS",
     submitting: "Submitting...",
     submittingRts: "Submitting RTS...",
@@ -89,6 +90,7 @@ const translations = {
     selectSubReason: "Seleccione sub-razón",
     photo: "Subir foto",
     photoHint: "Tome o suba una foto clara del paquete.",
+    businessClosedPhotoHint: "Para negocios cerrados, la foto debe mostrar prueba del cierre, como horario publicado, aviso de cierre, letrero de la tienda, o nuevo horario.",
     submit: "Enviar RTS",
     submitting: "Enviando...",
     submittingRts: "Enviando RTS...",
@@ -117,6 +119,7 @@ const checklistLabels = {
   "Contacted Dispatch for final steps": "Contacté a Dispatch para los pasos finales",
   "Reviewed delivery notes/instructions": "Revisé las notas/instrucciones de entrega",
   "Attempted customer contact": "Intenté contactar al cliente",
+  "Took photo showing business hours, closure notice, or posted signage": "Tomé una foto que muestra el horario del negocio, aviso de cierre, o señalización publicada",
   "Contacted Driver Support if customer could not be reached": "Contacté a Driver Support si no se pudo contactar al cliente",
   "Contacted Driver Support": "Contacté a Driver Support",
   "Notified Dispatch": "Notifiqué a Dispatch",
@@ -141,6 +144,7 @@ const procedureChecklists = {
   "BUSINESS CLOSED": [
     "Reviewed delivery notes/instructions",
     "Attempted customer contact",
+    "Took photo showing business hours, closure notice, or posted signage",
     "Contacted Dispatch for final steps",
   ],
   "CUSTOMER ISSUE - UNAVAILABLE": [
@@ -297,9 +301,7 @@ function applyTranslations() {
   if (scanMessageKey) {
     setScanMessage(t(scanMessageKey), scanMessageIsError, scanMessageKey);
   }
-  if (photoInput.files.length) {
-    photoName.textContent = `${t("photoSelected")} ${photoInput.files[0].name}`;
-  }
+  updatePhotoHint();
   if (verificationDialog.open && currentVerificationReason) {
     renderVerificationModal(currentVerificationReason);
   }
@@ -333,6 +335,18 @@ function updateSubReasons() {
   subReasonGroup.hidden = subReasons.length === 0;
   subReasonSelect.required = subReasons.length > 0;
   subReasonSelect.value = subReasons.includes(selectedSubReason) ? selectedSubReason : "";
+  updatePhotoHint();
+}
+
+function updatePhotoHint() {
+  if (photoInput.files.length) {
+    photoName.textContent = `${t("photoSelected")} ${photoInput.files[0].name}`;
+    return;
+  }
+
+  photoName.textContent = reasonSelect.value === "BUSINESS CLOSED"
+    ? t("businessClosedPhotoHint")
+    : t("photoHint");
 }
 
 function setScanMessage(message, isError = false, key = "") {
@@ -598,7 +612,6 @@ async function resetForAnotherPackage() {
   document.querySelector("#driverName").value = driverName;
   setScanMessage("");
   setFormMessage("");
-  photoName.textContent = t("photoHint");
   updateSubReasons();
   await startScanner();
 }
@@ -625,9 +638,7 @@ document.querySelector("#tbaCode").addEventListener("blur", (event) => {
 reasonSelect.addEventListener("change", updateSubReasons);
 
 photoInput.addEventListener("change", () => {
-  photoName.textContent = photoInput.files.length
-    ? `${t("photoSelected")} ${photoInput.files[0].name}`
-    : t("photoHint");
+  updatePhotoHint();
 });
 
 form.addEventListener("submit", submitRts);
