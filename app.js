@@ -64,6 +64,8 @@ const translations = {
     missingBackend: "Connect the Google Apps Script URL before submitting.",
     submitError: "Unable to submit RTS. Please contact Dispatch.",
     photoSelected: "Photo selected:",
+    packagePhotoSelected: "Package photo selected:",
+    businessProofPhotoSelected: "Business Closed proof photo selected:",
     required: "Please complete all required fields.",
     back: "Back",
     confirmSubmit: "Confirm & Submit",
@@ -105,6 +107,8 @@ const translations = {
     missingBackend: "Conecte la URL de Google Apps Script antes de enviar.",
     submitError: "No se pudo enviar el RTS. Contacte a Dispatch.",
     photoSelected: "Foto seleccionada:",
+    packagePhotoSelected: "Foto del paquete seleccionada:",
+    businessProofPhotoSelected: "Foto de prueba de negocio cerrado seleccionada:",
     required: "Complete todos los campos requeridos.",
     back: "Atrás",
     confirmSubmit: "Confirmar y Enviar",
@@ -238,7 +242,7 @@ const scanMessage = document.querySelector("#scanMessage");
 const reasonSelect = document.querySelector("#reason");
 const subReasonGroup = document.querySelector("#subReasonGroup");
 const subReasonSelect = document.querySelector("#subReason");
-const photoInput = document.querySelector("#photo");
+const photoInput = document.querySelector("#packagePhotoInput");
 const photoName = document.querySelector("#photoName");
 const formMessage = document.querySelector("#formMessage");
 const submitButton = document.querySelector("#submitButton");
@@ -249,7 +253,7 @@ const verificationTitle = document.querySelector("#verificationTitle");
 const verificationOptions = document.querySelector("#verificationOptions");
 const verificationMessage = document.querySelector("#verificationMessage");
 const businessProofGroup = document.querySelector("#businessProofGroup");
-const businessProofPhotoInput = document.querySelector("#businessProofPhoto");
+const businessProofPhotoInput = document.querySelector("#businessClosedProofPhotoInput");
 const businessProofPhotoName = document.querySelector("#businessProofPhotoName");
 const backButton = verificationDialog.querySelector('[value="back"]');
 const confirmSubmitButton = verificationDialog.querySelector('[value="confirm"]');
@@ -348,7 +352,7 @@ function updateSubReasons() {
 
 function updatePhotoHint() {
   if (photoInput.files.length) {
-    photoName.textContent = `${t("photoSelected")} ${photoInput.files[0].name}`;
+    photoName.textContent = `${t("packagePhotoSelected")} ${photoInput.files[0].name}`;
     return;
   }
 
@@ -518,7 +522,7 @@ function renderVerificationModal(returnReason) {
 
 function updateBusinessProofPhotoName() {
   businessProofPhotoName.textContent = businessProofPhotoInput.files.length
-    ? `${t("photoSelected")} ${businessProofPhotoInput.files[0].name}`
+    ? `${t("businessProofPhotoSelected")} ${businessProofPhotoInput.files[0].name}`
     : "";
 }
 
