@@ -35,6 +35,9 @@ function doPost(e) {
       payload.userAgent || '',
       payload.dispatcherNotes || '',
     ];
+    if (rowData.length !== HEADERS.length) {
+      throw new Error('Sheet row does not match header count');
+    }
     sheet.insertRowBefore(2);
     sheet.getRange(2, 1, 1, rowData.length).setValues([rowData]);
 
@@ -96,15 +99,37 @@ function getOrCreateSheet_() {
     sheet = spreadsheet.insertSheet(SHEET_NAME);
   }
 
-  const firstRow = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
-  const hasHeaders = firstRow.some(Boolean);
-  const hasCurrentHeaders = HEADERS.every((header, index) => firstRow[index] === header);
-  if (!hasHeaders || !hasCurrentHeaders) {
-    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-    sheet.setFrozenRows(1);
-  }
+  ensureHeaders_(sheet);
 
   return sheet;
+}
+
+function ensureHeaders_(sheet) {
+  const lastColumn = Math.max(sheet.getLastColumn(), HEADERS.length);
+  let headers = sheet.getRange(1, 1, 1, lastColumn).getValues()[0];
+  const hasHeaders = headers.some(Boolean);
+  if (!hasHeaders) {
+    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+    sheet.setFrozenRows(1);
+    return;
+  }
+
+  let photoColumnIndex = headers.indexOf('Photo Link');
+  const oldPhotoColumnIndex = headers.indexOf('Photo Name / Photo Link');
+  if (photoColumnIndex === -1 && oldPhotoColumnIndex !== -1) {
+    photoColumnIndex = oldPhotoColumnIndex;
+    sheet.getRange(1, photoColumnIndex + 1).setValue('Photo Link');
+    headers[photoColumnIndex] = 'Photo Link';
+  }
+
+  if (headers.indexOf('Business Closed Proof Photo Link') === -1) {
+    const insertAfterColumn = photoColumnIndex === -1 ? 6 : photoColumnIndex + 1;
+    sheet.insertColumnAfter(insertAfterColumn);
+    sheet.getRange(1, insertAfterColumn + 1).setValue('Business Closed Proof Photo Link');
+  }
+
+  sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
+  sheet.setFrozenRows(1);
 }
 
 function json_(data) {
