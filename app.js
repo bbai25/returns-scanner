@@ -217,6 +217,7 @@ const verificationForm = document.querySelector("#verificationForm");
 const verificationTitle = document.querySelector("#verificationTitle");
 const verificationOptions = document.querySelector("#verificationOptions");
 const verificationMessage = document.querySelector("#verificationMessage");
+const backButton = verificationDialog.querySelector('[value="back"]');
 const confirmSubmitButton = verificationDialog.querySelector('[value="confirm"]');
 
 function t(key) {
@@ -495,11 +496,13 @@ async function sendPayload(payload) {
   isSubmitting = true;
   submitButton.disabled = true;
   submitButton.textContent = t("submittingRts");
+  backButton.disabled = true;
   confirmSubmitButton.disabled = true;
   confirmSubmitButton.textContent = t("submittingRts");
   verificationMessage.textContent = t("submittingRts");
   verificationMessage.className = "form-message";
 
+  let submittedSuccessfully = false;
   try {
     const compressedPhoto = await fileToPayload(payload.photoFile);
     const uploadPayload = {
@@ -520,17 +523,25 @@ async function sendPayload(payload) {
       throw new Error(result.error || "Submission failed");
     }
 
+    verificationDialog.close("confirm");
+    submittedSuccessfully = true;
     setFormMessage(t("successTitle"), "success");
     successDialog.showModal();
   } catch (error) {
-    setFormMessage(t("submitError"), "error");
+    const message = error.message || t("submitError");
+    verificationMessage.textContent = message;
+    verificationMessage.className = "form-message is-error";
+    setFormMessage(message, "error");
   } finally {
     isSubmitting = false;
     submitButton.disabled = false;
     submitButton.textContent = t("submit");
+    backButton.disabled = false;
     confirmSubmitButton.disabled = false;
     confirmSubmitButton.textContent = t("confirmSubmit");
-    pendingPayload = null;
+    if (submittedSuccessfully) {
+      pendingPayload = null;
+    }
   }
 }
 
@@ -623,7 +634,6 @@ verificationForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  verificationDialog.close("confirm");
   await sendPayload({
     ...pendingPayload,
     contactStepCompleted,
