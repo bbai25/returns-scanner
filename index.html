@@ -82,5 +82,17 @@
         </div>
       </form>
     </dialog>
+
+    <dialog class="verification-dialog" id="verificationDialog">
+      <form method="dialog" id="verificationForm">
+        <h2 id="verificationTitle">Before submitting, confirm Dispatch was notified.</h2>
+        <div class="verification-options" id="verificationOptions"></div>
+        <p class="form-message" id="verificationMessage" role="status" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="back" type="submit" data-i18n="back">Back</button>
+          <button class="primary-button" value="confirm" type="submit" data-i18n="confirmSubmit">Confirm &amp; Submit</button>
+        </div>
+      </form>
+    </dialog>
   </body>
 </html>

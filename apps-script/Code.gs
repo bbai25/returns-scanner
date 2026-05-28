@@ -5,6 +5,7 @@ const HEADERS = [
   'Driver Name',
   'TBA Code',
   'Return Reason',
+  'Contact Step Completed',
   'Photo Name / Photo Link',
   'User Agent',
   'Dispatcher Notes',
@@ -24,6 +25,7 @@ function doPost(e) {
       payload.driverName,
       payload.tbaCode,
       payload.returnReason,
+      payload.contactStepCompleted,
       `${photo.name} / ${photo.url}`,
       payload.userAgent || '',
       payload.dispatcherNotes || '',
@@ -44,6 +46,7 @@ function validatePayload(payload) {
   if (!payload.driverName) throw new Error('Driver Name is required');
   if (!payload.tbaCode || !String(payload.tbaCode).startsWith('TBA')) throw new Error('Valid TBA Code is required');
   if (!payload.returnReason) throw new Error('Return Reason is required');
+  if (!payload.contactStepCompleted) throw new Error('Contact Step Completed is required');
   if (!payload.photo || !payload.photo.data || !payload.photo.name) throw new Error('Photo is required');
 }
 
@@ -85,7 +88,8 @@ function getOrCreateSheet_() {
 
   const firstRow = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
   const hasHeaders = firstRow.some(Boolean);
-  if (!hasHeaders) {
+  const hasCurrentHeaders = HEADERS.every((header, index) => firstRow[index] === header);
+  if (!hasHeaders || !hasCurrentHeaders) {
     sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
     sheet.setFrozenRows(1);
   }

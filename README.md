@@ -1,6 +1,6 @@
 # Return to Station RTS App
 
-Mobile-friendly RTS form for Amazon DSP drivers. Drivers enter their name, scan or type a TBA barcode, choose a return reason, upload a photo, and submit to Google Sheets and Google Drive through Google Apps Script.
+Mobile-friendly RTS form for Amazon DSP drivers. Drivers enter their name, scan or type a TBA barcode, choose a return reason, upload a photo, confirm the required contact or dispatch step, and submit to Google Sheets and Google Drive through Google Apps Script.
 
 ## Files
 
@@ -40,6 +40,7 @@ The Google Sheet stores reporting values in English:
 - Driver Name
 - TBA Code
 - Return Reason
+- Contact Step Completed
 - Photo Name / Photo Link
 - User Agent
 - Dispatcher Notes

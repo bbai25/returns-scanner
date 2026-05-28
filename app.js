@@ -64,6 +64,19 @@ const translations = {
     submitError: "Unable to submit RTS. Please contact Dispatch.",
     photoSelected: "Photo selected:",
     required: "Please complete all required fields.",
+    back: "Back",
+    confirmSubmit: "Confirm & Submit",
+    contactPromptTitle: "Before submitting, confirm the contact step completed.",
+    contactOptionCustomer: "Called customer for at least 15 seconds or reached voicemail, then sent text message",
+    contactOptionSupport: "Contacted Driver Support because customer could not be reached, phone was disconnected, no number was available, or it was unsafe to contact the customer",
+    contactRequired: "Please select the contact step completed before submitting.",
+    businessClosedPromptTitle: "Before submitting, confirm Business Closed steps completed.",
+    businessClosedOptionNotes: "Checked delivery notes/instructions and attempted customer contact",
+    businessClosedOptionDispatch: "Contacted Dispatch for final steps",
+    businessClosedRequired: "Please confirm Business Closed steps before submitting.",
+    dispatchPromptTitle: "Before submitting, confirm Dispatch was notified.",
+    dispatchOption: "Contacted Dispatch for final steps",
+    dispatchRequired: "Please confirm Dispatch was contacted before submitting.",
   },
   es: {
     sop: "Procedimiento Operativo Estándar",
@@ -97,14 +110,91 @@ const translations = {
     submitError: "No se pudo enviar el RTS. Contacte a Dispatch.",
     photoSelected: "Foto seleccionada:",
     required: "Complete todos los campos requeridos.",
+    back: "Atrás",
+    confirmSubmit: "Confirmar y Enviar",
+    contactPromptTitle: "Antes de enviar, confirme el paso de contacto completado.",
+    contactOptionCustomer: "Llamé al cliente por al menos 15 segundos o llegó al buzón de voz, luego envié mensaje de texto",
+    contactOptionSupport: "Contacté a Soporte de Conductores porque no se pudo contactar al cliente, el teléfono estaba desconectado, no había número disponible, o no era seguro contactar al cliente",
+    contactRequired: "Seleccione el paso de contacto completado antes de enviar.",
+    businessClosedPromptTitle: "Antes de enviar, confirme que completó los pasos de negocio cerrado.",
+    businessClosedOptionNotes: "Revisé las notas/instrucciones de entrega e intenté contactar al cliente",
+    businessClosedOptionDispatch: "Contacté a Despacho para los pasos finales",
+    businessClosedRequired: "Confirme los pasos de negocio cerrado antes de enviar.",
+    dispatchPromptTitle: "Antes de enviar, confirme que Despacho fue notificado.",
+    dispatchOption: "Contacté a Despacho para los pasos finales",
+    dispatchRequired: "Confirme que contactó a Despacho antes de enviar.",
   },
 };
+
+const verificationTypes = {
+  contact: {
+    titleKey: "contactPromptTitle",
+    requiredKey: "contactRequired",
+    inputType: "radio",
+    options: [
+      {
+        id: "contact-customer",
+        labelKey: "contactOptionCustomer",
+        value: "Customer call/text completed",
+      },
+      {
+        id: "contact-support",
+        labelKey: "contactOptionSupport",
+        value: "Driver Support contacted",
+      },
+    ],
+  },
+  businessClosed: {
+    titleKey: "businessClosedPromptTitle",
+    requiredKey: "businessClosedRequired",
+    inputType: "checkbox",
+    completionValue: "Business Closed steps completed",
+    options: [
+      {
+        id: "business-notes",
+        labelKey: "businessClosedOptionNotes",
+        value: "Checked delivery notes/instructions and attempted customer contact",
+      },
+      {
+        id: "business-dispatch",
+        labelKey: "businessClosedOptionDispatch",
+        value: "Contacted Dispatch for final steps",
+      },
+    ],
+  },
+  dispatch: {
+    titleKey: "dispatchPromptTitle",
+    requiredKey: "dispatchRequired",
+    inputType: "checkbox",
+    completionValue: "Dispatch contacted",
+    options: [
+      {
+        id: "dispatch-contacted",
+        labelKey: "dispatchOption",
+        value: "Contacted Dispatch for final steps",
+      },
+    ],
+  },
+};
+
+const contactComplianceReasons = new Set([
+  "ACCESS ISSUE",
+  "CUSTOMER ISSUE - UNAVAILABLE",
+  "INCORRECT ADDRESS",
+  "UNABLE TO FIND ADDRESS",
+  "UNSAFE DELIVERY - DUE TO DOG",
+  "UNSAFE DELIVERY - DUE TO BAD WEATHER",
+  "UNSAFE DELIVERY - UNSAFE TO LEAVE PACKAGE",
+  "UNSAFE DELIVERY - ROAD CLOSED",
+]);
 
 let currentLanguage = "en";
 let scanner;
 let isScanning = false;
 let scanMessageKey = "";
 let scanMessageIsError = false;
+let pendingPayload = null;
+let currentVerificationType = "";
 
 const form = document.querySelector("#rtsForm");
 const languageToggle = document.querySelector("#languageToggle");
@@ -119,6 +209,11 @@ const photoName = document.querySelector("#photoName");
 const formMessage = document.querySelector("#formMessage");
 const submitButton = document.querySelector("#submitButton");
 const successDialog = document.querySelector("#successDialog");
+const verificationDialog = document.querySelector("#verificationDialog");
+const verificationForm = document.querySelector("#verificationForm");
+const verificationTitle = document.querySelector("#verificationTitle");
+const verificationOptions = document.querySelector("#verificationOptions");
+const verificationMessage = document.querySelector("#verificationMessage");
 
 function t(key) {
   return translations[currentLanguage][key] || translations.en[key] || key;
@@ -176,6 +271,9 @@ function applyTranslations() {
   }
   if (photoInput.files.length) {
     photoName.textContent = `${t("photoSelected")} ${photoInput.files[0].name}`;
+  }
+  if (verificationDialog.open && currentVerificationType) {
+    renderVerificationModal(currentVerificationType);
   }
 }
 
@@ -306,35 +404,71 @@ function getReturnReason() {
   return reason;
 }
 
-async function submitRts(event) {
-  event.preventDefault();
-  setFormMessage("");
-
-  const tbaInput = document.querySelector("#tbaCode");
-  if (!form.reportValidity() || !acceptTba(tbaInput.value)) {
-    setFormMessage(t("required"), "error");
-    return;
+function getVerificationType(returnReason) {
+  if (reasonSelect.value === "BUSINESS CLOSED") {
+    return "businessClosed";
   }
 
-  if (!CONFIG.appsScriptUrl) {
-    setFormMessage(t("missingBackend"), "error");
-    return;
+  if (contactComplianceReasons.has(returnReason)) {
+    return "contact";
   }
 
+  return "dispatch";
+}
+
+function renderVerificationModal(type) {
+  currentVerificationType = type;
+  const config = verificationTypes[type];
+  verificationTitle.textContent = t(config.titleKey);
+  verificationMessage.textContent = "";
+  verificationMessage.className = "form-message";
+  verificationOptions.innerHTML = "";
+
+  config.options.forEach((option, index) => {
+    const label = document.createElement("label");
+    label.className = "verification-option";
+    label.htmlFor = option.id;
+
+    const input = document.createElement("input");
+    input.type = config.inputType;
+    input.id = option.id;
+    input.name = "verificationStep";
+    input.value = option.value;
+
+    const text = document.createElement("span");
+    text.textContent = t(option.labelKey);
+
+    label.append(input, text);
+    verificationOptions.append(label);
+  });
+}
+
+function getContactStepCompleted() {
+  const config = verificationTypes[currentVerificationType];
+  const checked = Array.from(verificationOptions.querySelectorAll("input:checked"));
+
+  if (currentVerificationType === "contact") {
+    return checked[0]?.value || "";
+  }
+
+  if (checked.length !== config.options.length) {
+    return "";
+  }
+
+  return config.completionValue;
+}
+
+function showVerificationModal(payload) {
+  pendingPayload = payload;
+  renderVerificationModal(getVerificationType(payload.returnReason));
+  verificationDialog.showModal();
+}
+
+async function sendPayload(payload) {
   submitButton.disabled = true;
   submitButton.textContent = t("submitting");
 
   try {
-    const photo = await fileToPayload(photoInput.files[0]);
-    const payload = {
-      driverName: document.querySelector("#driverName").value.trim(),
-      tbaCode: normalizeTba(tbaInput.value),
-      returnReason: getReturnReason(),
-      userAgent: navigator.userAgent,
-      dispatcherNotes: "",
-      photo,
-    };
-
     const response = await fetch(CONFIG.appsScriptUrl, {
       method: "POST",
       mode: "cors",
@@ -354,6 +488,40 @@ async function submitRts(event) {
   } finally {
     submitButton.disabled = false;
     submitButton.textContent = t("submit");
+    pendingPayload = null;
+  }
+}
+
+async function submitRts(event) {
+  event.preventDefault();
+  setFormMessage("");
+
+  const tbaInput = document.querySelector("#tbaCode");
+  if (!form.reportValidity() || !acceptTba(tbaInput.value)) {
+    setFormMessage(t("required"), "error");
+    return;
+  }
+
+  if (!CONFIG.appsScriptUrl) {
+    setFormMessage(t("missingBackend"), "error");
+    return;
+  }
+
+  try {
+    const photo = await fileToPayload(photoInput.files[0]);
+    const payload = {
+      driverName: document.querySelector("#driverName").value.trim(),
+      tbaCode: normalizeTba(tbaInput.value),
+      returnReason: getReturnReason(),
+      contactStepCompleted: "",
+      userAgent: navigator.userAgent,
+      dispatcherNotes: "",
+      photo,
+    };
+
+    showVerificationModal(payload);
+  } catch (error) {
+    setFormMessage(t("submitError"), "error");
   }
 }
 
@@ -396,6 +564,30 @@ photoInput.addEventListener("change", () => {
 });
 
 form.addEventListener("submit", submitRts);
+
+verificationForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const action = event.submitter?.value;
+  if (action === "back") {
+    pendingPayload = null;
+    verificationDialog.close("back");
+    return;
+  }
+
+  const contactStepCompleted = getContactStepCompleted();
+  if (!contactStepCompleted) {
+    verificationMessage.textContent = t(verificationTypes[currentVerificationType].requiredKey);
+    verificationMessage.className = "form-message is-error";
+    return;
+  }
+
+  verificationDialog.close("confirm");
+  await sendPayload({
+    ...pendingPayload,
+    contactStepCompleted,
+  });
+});
 
 successDialog.addEventListener("close", async () => {
   if (successDialog.returnValue === "another") {
