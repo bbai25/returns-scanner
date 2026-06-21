@@ -125,6 +125,7 @@ const translations = {
 };
 
 const checklistLabels = {
+  "Remained at the business location for at least 45 seconds before marking unable to deliver": "Permanecí en la ubicación del negocio por al menos 45 segundos antes de marcar como no se pudo entregar",
   "Called customer": "Llamé al cliente",
   "Sent text message": "Envié mensaje de texto",
   "Contacted Driver Support if access issue was not resolved": "Contacté a Driver Support si el problema de acceso no se resolvió",
@@ -154,6 +155,7 @@ const procedureChecklists = {
     "Contacted Dispatch for final steps",
   ],
   "BUSINESS CLOSED": [
+    "Remained at the business location for at least 45 seconds before marking unable to deliver",
     "Reviewed delivery notes/instructions",
     "Attempted customer contact",
     "Took photo showing business hours, closure notice, storefront/signage, or changed hours",
