@@ -68,15 +68,14 @@ const translations = {
     submitError: "Unable to submit RTS. Please contact Dispatch.",
     photoSelected: "Photo selected:",
     packagePhotoSelected: "Package photo selected:",
-    businessProofPhotoSelected: "Business Closed proof photo selected:",
     required: "Please complete all required fields.",
     back: "Back",
     confirmSubmit: "Confirm & Submit",
     checklistPromptTitle: "Before submitting, complete RTS procedure steps.",
     checklistRequired: "Please complete all required RTS procedure steps before submitting.",
-    businessProofPhoto: "Take Business Closed Proof Photo",
-    businessProofPhotoHint: "Photo should show business hours, closure notice, storefront/signage, or changed hours.",
-    businessProofPhotoRequired: "Please take a Business Closed proof photo before submitting.",
+    businessPhotoWarningTitle: "Business Closed Photo Required",
+    businessPhotoWarningMessage: "For Business Closed, take a photo showing proof that the business is closed or hours have changed. Photo should show posted business hours, closure notice, storefront/signage, or new/changed business hours.",
+    understand: "I Understand",
   },
   es: {
     sop: "Procedimiento Operativo Estándar",
@@ -112,15 +111,14 @@ const translations = {
     submitError: "No se pudo enviar el RTS. Contacte a Dispatch.",
     photoSelected: "Foto seleccionada:",
     packagePhotoSelected: "Foto del paquete seleccionada:",
-    businessProofPhotoSelected: "Foto de prueba de negocio cerrado seleccionada:",
     required: "Complete todos los campos requeridos.",
     back: "Atrás",
     confirmSubmit: "Confirmar y Enviar",
     checklistPromptTitle: "Antes de enviar, complete los pasos del procedimiento RTS.",
     checklistRequired: "Please complete all required RTS procedure steps before submitting.",
-    businessProofPhoto: "Tomar foto de prueba de negocio cerrado",
-    businessProofPhotoHint: "La foto debe mostrar el horario del negocio, aviso de cierre, letrero de la tienda, o cambio de horario.",
-    businessProofPhotoRequired: "Tome una foto de prueba de negocio cerrado antes de enviar.",
+    businessPhotoWarningTitle: "Foto requerida para negocio cerrado",
+    businessPhotoWarningMessage: "Para negocio cerrado, tome una foto que muestre prueba de que el negocio está cerrado o que el horario cambió. La foto debe mostrar horario publicado, aviso de cierre, letrero de la tienda, o nuevo/cambio de horario.",
+    understand: "Entiendo",
   },
 };
 
@@ -239,6 +237,7 @@ let scanMessageIsError = false;
 let pendingPayload = null;
 let currentVerificationReason = "";
 let isSubmitting = false;
+let businessClosedPhotoAcknowledged = false;
 
 const form = document.querySelector("#rtsForm");
 const driverNameInput = document.querySelector("#driverName");
@@ -255,14 +254,12 @@ const formMessage = document.querySelector("#formMessage");
 const submitButton = document.querySelector("#submitButton");
 const resetButton = document.querySelector("#resetButton");
 const successDialog = document.querySelector("#successDialog");
+const businessPhotoDialog = document.querySelector("#businessPhotoDialog");
 const verificationDialog = document.querySelector("#verificationDialog");
 const verificationForm = document.querySelector("#verificationForm");
 const verificationTitle = document.querySelector("#verificationTitle");
 const verificationOptions = document.querySelector("#verificationOptions");
 const verificationMessage = document.querySelector("#verificationMessage");
-const businessProofGroup = document.querySelector("#businessProofGroup");
-const businessProofPhotoInput = document.querySelector("#businessClosedProofPhotoInput");
-const businessProofPhotoName = document.querySelector("#businessProofPhotoName");
 const backButton = verificationDialog.querySelector('[value="back"]');
 const confirmSubmitButton = verificationDialog.querySelector('[value="confirm"]');
 
@@ -324,7 +321,7 @@ function applyTranslations() {
   if (verificationDialog.open && currentVerificationReason) {
     renderVerificationModal(currentVerificationReason);
   }
-  updateBusinessProofPhotoName();
+  updatePackagePhotoAvailability();
 }
 
 function renderReasons() {
@@ -365,6 +362,16 @@ function updatePhotoHint() {
   }
 
   photoName.textContent = t("photoHint");
+}
+
+function updatePackagePhotoAvailability() {
+  photoInput.disabled = reasonSelect.value === "BUSINESS CLOSED" && !businessClosedPhotoAcknowledged;
+}
+
+function showBusinessPhotoWarning() {
+  if (!businessPhotoDialog.open) {
+    businessPhotoDialog.showModal();
+  }
 }
 
 function setScanMessage(message, isError = false, key = "") {
@@ -516,12 +523,6 @@ function renderVerificationModal(returnReason) {
   verificationMessage.textContent = "";
   verificationMessage.className = "form-message";
   verificationOptions.innerHTML = "";
-  businessProofGroup.hidden = returnReason !== "BUSINESS CLOSED";
-  businessProofPhotoInput.required = returnReason === "BUSINESS CLOSED";
-  if (businessProofGroup.hidden) {
-    businessProofPhotoInput.value = "";
-  }
-  updateBusinessProofPhotoName();
 
   checklist.forEach((value, index) => {
     const label = document.createElement("label");
@@ -540,12 +541,6 @@ function renderVerificationModal(returnReason) {
     label.append(input, text);
     verificationOptions.append(label);
   });
-}
-
-function updateBusinessProofPhotoName() {
-  businessProofPhotoName.textContent = businessProofPhotoInput.files.length
-    ? `${t("businessProofPhotoSelected")} ${businessProofPhotoInput.files[0].name}`
-    : "";
 }
 
 function getContactStepCompleted() {
@@ -587,12 +582,7 @@ async function sendPayload(payload) {
       photo: compressedPhoto,
     };
 
-    if (payload.businessClosedProofPhotoFile) {
-      uploadPayload.businessClosedProofPhoto = await fileToPayload(payload.businessClosedProofPhotoFile);
-    }
-
     delete uploadPayload.photoFile;
-    delete uploadPayload.businessClosedProofPhotoFile;
 
     const response = await fetch(CONFIG.appsScriptUrl, {
       method: "POST",
@@ -643,6 +633,11 @@ async function submitRts(event) {
     return;
   }
 
+  if (reasonSelect.value === "BUSINESS CLOSED" && !businessClosedPhotoAcknowledged) {
+    showBusinessPhotoWarning();
+    return;
+  }
+
   saveDriverName();
   const payload = {
     driverName: document.querySelector("#driverName").value.trim(),
@@ -684,9 +679,12 @@ async function resetFormState({ reopenScanner = false } = {}) {
   if (successDialog.open) {
     successDialog.close("reset");
   }
+  if (businessPhotoDialog.open) {
+    businessPhotoDialog.close("reset");
+  }
   await stopScanner();
   form.reset();
-  businessProofPhotoInput.value = "";
+  businessClosedPhotoAcknowledged = false;
   driverNameInput.value = driverName;
   saveDriverName();
   setScanMessage("");
@@ -695,9 +693,9 @@ async function resetFormState({ reopenScanner = false } = {}) {
   verificationMessage.className = "form-message";
   pendingPayload = null;
   currentVerificationReason = "";
-  updateBusinessProofPhotoName();
   updateSubReasons();
   updatePhotoHint();
+  updatePackagePhotoAvailability();
   if (reopenScanner) {
     await startScanner();
   }
@@ -722,7 +720,14 @@ document.querySelector("#tbaCode").addEventListener("blur", (event) => {
   }
 });
 
-reasonSelect.addEventListener("change", updateSubReasons);
+reasonSelect.addEventListener("change", () => {
+  businessClosedPhotoAcknowledged = false;
+  updateSubReasons();
+  updatePackagePhotoAvailability();
+  if (reasonSelect.value === "BUSINESS CLOSED") {
+    showBusinessPhotoWarning();
+  }
+});
 
 photoInput.addEventListener("change", () => {
   updatePhotoHint();
@@ -757,20 +762,16 @@ verificationForm.addEventListener("submit", async (event) => {
     return;
   }
 
-  if (pendingPayload.returnReason === "BUSINESS CLOSED" && !businessProofPhotoInput.files.length) {
-    verificationMessage.textContent = t("businessProofPhotoRequired");
-    verificationMessage.className = "form-message is-error";
-    return;
-  }
-
   await sendPayload({
     ...pendingPayload,
     contactStepCompleted,
-    businessClosedProofPhotoFile: businessProofPhotoInput.files[0],
   });
 });
 
-businessProofPhotoInput.addEventListener("change", updateBusinessProofPhotoName);
+businessPhotoDialog.addEventListener("close", () => {
+  businessClosedPhotoAcknowledged = businessPhotoDialog.returnValue === "understand";
+  updatePackagePhotoAvailability();
+});
 
 successDialog.addEventListener("close", async () => {
   if (successDialog.returnValue === "another") {

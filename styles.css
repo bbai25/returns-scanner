@@ -220,6 +220,7 @@ button:focus {
 }
 
 .success-dialog,
+.business-photo-dialog,
 .verification-dialog {
   width: min(calc(100% - 32px), 420px);
   border: 0;
@@ -230,11 +231,13 @@ button:focus {
 }
 
 .success-dialog::backdrop,
+.business-photo-dialog::backdrop,
 .verification-dialog::backdrop {
   background: rgba(15, 23, 42, 0.45);
 }
 
 .success-dialog form,
+.business-photo-dialog form,
 .verification-dialog form {
   display: grid;
   gap: 12px;
@@ -242,8 +245,10 @@ button:focus {
 }
 
 .success-dialog h2,
+.business-photo-dialog h2,
 .verification-dialog h2,
-.success-dialog p {
+.success-dialog p,
+.business-photo-dialog p {
   margin: 0;
   text-align: center;
 }
@@ -257,15 +262,6 @@ button:focus {
   display: grid;
   gap: 10px;
   margin-top: 4px;
-}
-
-.business-proof-group {
-  display: grid;
-  gap: 8px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #f8fafc;
-  padding: 12px;
 }
 
 .verification-option {

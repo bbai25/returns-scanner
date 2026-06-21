@@ -7,7 +7,6 @@ const HEADERS = [
   'Return Reason',
   'Contact Step Completed',
   'Photo Link',
-  'Business Closed Proof Photo Link',
   'User Agent',
   'Dispatcher Notes',
 ];
@@ -19,9 +18,6 @@ function doPost(e) {
 
     const folder = getOrCreateFolder_(PHOTO_FOLDER_NAME);
     const photo = savePhoto_(folder, payload.photo, payload.tbaCode);
-    const businessClosedProofPhoto = payload.businessClosedProofPhoto
-      ? savePhoto_(folder, payload.businessClosedProofPhoto, payload.tbaCode, '-business-closed-proof')
-      : null;
     const sheet = getOrCreateSheet_();
 
     const rowData = [
@@ -31,7 +27,6 @@ function doPost(e) {
       payload.returnReason,
       payload.contactStepCompleted,
       photo.url,
-      businessClosedProofPhoto ? businessClosedProofPhoto.url : '',
       payload.userAgent || '',
       payload.dispatcherNotes || '',
     ];
@@ -58,9 +53,6 @@ function validatePayload(payload) {
   if (!payload.returnReason) throw new Error('Return Reason is required');
   if (!payload.contactStepCompleted) throw new Error('Contact Step Completed is required');
   if (!payload.photo || !payload.photo.data || !payload.photo.name) throw new Error('Photo is required');
-  if (payload.returnReason === 'BUSINESS CLOSED' && (!payload.businessClosedProofPhoto || !payload.businessClosedProofPhoto.data || !payload.businessClosedProofPhoto.name)) {
-    throw new Error('Business Closed Proof Photo is required');
-  }
 }
 
 function savePhoto_(folder, photo, tbaCode, suffix) {
@@ -122,10 +114,9 @@ function ensureHeaders_(sheet) {
     headers[photoColumnIndex] = 'Photo Link';
   }
 
-  if (headers.indexOf('Business Closed Proof Photo Link') === -1) {
-    const insertAfterColumn = photoColumnIndex === -1 ? 6 : photoColumnIndex + 1;
-    sheet.insertColumnAfter(insertAfterColumn);
-    sheet.getRange(1, insertAfterColumn + 1).setValue('Business Closed Proof Photo Link');
+  const proofPhotoColumnIndex = headers.indexOf('Business Closed Proof Photo Link');
+  if (proofPhotoColumnIndex !== -1) {
+    sheet.deleteColumn(proofPhotoColumnIndex + 1);
   }
 
   sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);

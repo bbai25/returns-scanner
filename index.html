@@ -84,16 +84,18 @@
       </form>
     </dialog>
 
+    <dialog class="business-photo-dialog" id="businessPhotoDialog">
+      <form method="dialog">
+        <h2 data-i18n="businessPhotoWarningTitle">Business Closed Photo Required</h2>
+        <p data-i18n="businessPhotoWarningMessage">For Business Closed, take a photo showing proof that the business is closed or hours have changed. Photo should show posted business hours, closure notice, storefront/signage, or new/changed business hours.</p>
+        <button class="primary-button" value="understand" type="submit" data-i18n="understand">I Understand</button>
+      </form>
+    </dialog>
+
     <dialog class="verification-dialog" id="verificationDialog">
       <form method="dialog" id="verificationForm">
         <h2 id="verificationTitle">Before submitting, confirm Dispatch was notified.</h2>
         <div class="verification-options" id="verificationOptions"></div>
-        <div class="business-proof-group" id="businessProofGroup" hidden>
-          <label for="businessClosedProofPhotoInput" data-i18n="businessProofPhoto">Take Business Closed Proof Photo</label>
-          <input id="businessClosedProofPhotoInput" name="businessClosedProofPhoto" type="file" accept="image/*" capture="environment">
-          <p class="field-hint" data-i18n="businessProofPhotoHint">Photo should show business hours, closure notice, storefront/signage, or changed hours.</p>
-          <p class="field-hint" id="businessProofPhotoName"></p>
-        </div>
         <p class="form-message" id="verificationMessage" role="status" aria-live="polite"></p>
         <div class="dialog-actions">
           <button class="secondary-button" value="back" type="submit" data-i18n="back">Back</button>

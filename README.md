@@ -42,7 +42,6 @@ The Google Sheet stores reporting values in English:
 - Return Reason
 - Contact Step Completed
 - Photo Link
-- Business Closed Proof Photo Link
 - User Agent
 - Dispatcher Notes
 
