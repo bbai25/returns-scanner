@@ -2,6 +2,8 @@ const CONFIG = {
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbxnDWfkhE63t_ApRmQoRW6KMcvtkmQnCzaWatu9pFV1uXViPVJq0lxECAPAJWnHJf7Z/exec",
 };
 
+const DRIVER_NAME_STORAGE_KEY = "rtsDriverName";
+
 const reasons = [
   { value: "ACCESS ISSUE" },
   { value: "BUSINESS CLOSED" },
@@ -52,6 +54,7 @@ const translations = {
     photo: "Photo Upload",
     photoHint: "Take or upload a clear package photo.",
     submit: "Submit RTS",
+    resetForm: "Reset Form",
     submitting: "Submitting...",
     submittingRts: "Submitting RTS...",
     successTitle: "RTS submitted successfully.",
@@ -95,6 +98,7 @@ const translations = {
     photo: "Subir foto",
     photoHint: "Tome o suba una foto clara del paquete.",
     submit: "Enviar RTS",
+    resetForm: "Restablecer formulario",
     submitting: "Enviando...",
     submittingRts: "Enviando RTS...",
     successTitle: "RTS enviado correctamente.",
@@ -235,6 +239,7 @@ let currentVerificationReason = "";
 let isSubmitting = false;
 
 const form = document.querySelector("#rtsForm");
+const driverNameInput = document.querySelector("#driverName");
 const languageToggle = document.querySelector("#languageToggle");
 const scanButton = document.querySelector("#scanButton");
 const scannerPanel = document.querySelector("#scannerPanel");
@@ -246,6 +251,7 @@ const photoInput = document.querySelector("#packagePhotoInput");
 const photoName = document.querySelector("#photoName");
 const formMessage = document.querySelector("#formMessage");
 const submitButton = document.querySelector("#submitButton");
+const resetButton = document.querySelector("#resetButton");
 const successDialog = document.querySelector("#successDialog");
 const verificationDialog = document.querySelector("#verificationDialog");
 const verificationForm = document.querySelector("#verificationForm");
@@ -388,14 +394,28 @@ function acceptTba(value) {
 }
 
 async function stopScanner() {
-  if (!scanner || !isScanning) {
+  if (!scanner) {
+    isScanning = false;
+    scannerPanel.hidden = true;
+    scanButton.textContent = t("startScan");
     return;
   }
 
-  await scanner.stop();
-  isScanning = false;
-  scannerPanel.hidden = true;
-  scanButton.textContent = t("startScan");
+  try {
+    if (isScanning) {
+      await scanner.stop();
+    }
+  } catch (error) {
+  } finally {
+    try {
+      await scanner.clear();
+    } catch (error) {
+    }
+    scanner = null;
+    isScanning = false;
+    scannerPanel.hidden = true;
+    scanButton.textContent = t("startScan");
+  }
 }
 
 async function startScanner() {
@@ -621,6 +641,7 @@ async function submitRts(event) {
     return;
   }
 
+  saveDriverName();
   const payload = {
     driverName: document.querySelector("#driverName").value.trim(),
     tbaCode: normalizeTba(tbaInput.value),
@@ -635,15 +656,49 @@ async function submitRts(event) {
 }
 
 async function resetForAnotherPackage() {
-  const driverName = document.querySelector("#driverName").value;
+  await resetFormState({ reopenScanner: true });
+}
+
+function getSavedDriverName() {
+  try {
+    return localStorage.getItem(DRIVER_NAME_STORAGE_KEY) || "";
+  } catch (error) {
+    return "";
+  }
+}
+
+function saveDriverName() {
+  try {
+    localStorage.setItem(DRIVER_NAME_STORAGE_KEY, driverNameInput.value.trim());
+  } catch (error) {
+  }
+}
+
+async function resetFormState({ reopenScanner = false } = {}) {
+  const driverName = driverNameInput.value.trim() || getSavedDriverName();
+  if (verificationDialog.open) {
+    verificationDialog.close("reset");
+  }
+  if (successDialog.open) {
+    successDialog.close("reset");
+  }
+  await stopScanner();
   form.reset();
   businessProofPhotoInput.value = "";
-  document.querySelector("#driverName").value = driverName;
+  driverNameInput.value = driverName;
+  saveDriverName();
   setScanMessage("");
   setFormMessage("");
+  verificationMessage.textContent = "";
+  verificationMessage.className = "form-message";
+  pendingPayload = null;
+  currentVerificationReason = "";
   updateBusinessProofPhotoName();
   updateSubReasons();
-  await startScanner();
+  updatePhotoHint();
+  if (reopenScanner) {
+    await startScanner();
+  }
 }
 
 languageToggle.addEventListener("click", () => {
@@ -669,6 +724,12 @@ reasonSelect.addEventListener("change", updateSubReasons);
 
 photoInput.addEventListener("change", () => {
   updatePhotoHint();
+});
+
+driverNameInput.addEventListener("input", saveDriverName);
+
+resetButton.addEventListener("click", async () => {
+  await resetFormState();
 });
 
 form.addEventListener("submit", submitRts);
@@ -715,4 +776,10 @@ successDialog.addEventListener("close", async () => {
   }
 });
 
-applyTranslations();
+async function initializeApp() {
+  driverNameInput.value = getSavedDriverName();
+  applyTranslations();
+  await resetFormState();
+}
+
+initializeApp();
